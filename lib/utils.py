@@ -54,15 +54,16 @@ def make_art(meta):
     if 'thumb' in meta: art_dict['thumb'] = meta['thumb']
     return art_dict
 
-def set_view(content, set_sort=False):
+def set_view(content, set_view=False, set_sort=False):
     # set content type so library shows more views and info
     if content:
         kodi.set_content(content)
 
-    view = kodi.get_setting('%s_view' % (content))
-    if view and view != '0':
-        log_utils.log('Setting View to %s (%s)' % (view, content), log_utils.LOGDEBUG)
-        xbmc.executebuiltin('Container.SetViewMode(%s)' % (view))
+    if set_view:
+        view = kodi.get_setting('%s_view' % (content))
+        if view and view != '0':
+            log_utils.log('Setting View to %s (%s)' % (view, content), log_utils.LOGDEBUG)
+            xbmc.executebuiltin('Container.SetViewMode(%s)' % (view))
 
     # set sort methods - probably we don't need all of them
     if set_sort:

@@ -23,5 +23,8 @@ STRINGS = {
     'failed_create_dir': 30003,
     'failed_write_file': 30004,
     'download_complete': 30005,
-    'download_error': 30006
+    'download_error': 30006,
+    'no_download_path': 30007,
+    'cancel': 30008,
+    'set_it_now': 30009
 }

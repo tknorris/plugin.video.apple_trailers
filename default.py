@@ -87,7 +87,7 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
         queries = {'mode': MODES.PLAY_TRAILER, 'trailer_url': stream_url, 'thumb': trailer.get('thumb', '')}
         liz_url = kodi.get_plugin_url(queries)
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), liz_url, liz, isFolder=False)
-    utils.set_view('movies')
+    utils.set_view('movies', set_view=True)
     kodi.end_of_directory()
 
 @url_dispatcher.register(MODES.PLAY_TRAILER, ['trailer_url'], ['thumb'])
@@ -102,6 +102,14 @@ def play_trailer(trailer_url, thumb=''):
 @url_dispatcher.register(MODES.DOWNLOAD_TRAILER, ['trailer_url', 'title'], ['year'])
 def download_trailer(trailer_url, title, year=''):
     path = kodi.get_setting('download_path')
+    while not path:
+        ret = xbmcgui.Dialog().yesno(kodi.get_name(), i18n('no_download_path'), nolabel=i18n('cancel'), yeslabel=i18n('set_it_now'))
+        if not ret:
+            return
+
+        kodi.show_settings()
+        path = kodi.get_setting('download_path')
+        
     file_name = utils.create_legal_filename(title, year)
     utils.download_media(trailer_url, path, file_name)
 

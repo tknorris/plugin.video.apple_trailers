@@ -90,7 +90,6 @@ class Scraper(object):
             headers = {'User-Agent': BROWSER_UA, 'Referer': page_url}
             headers.update(XHR)
             js_data = self.__get_json(TRAILERS_URL % (movie_id), headers)
-            log_utils.log(json.dumps(js_data))
             try: page = self.__get_page(js_data['page'])
             except: page = {}
             try: details = self.__get_details(js_data['details'])
