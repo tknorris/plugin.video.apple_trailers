@@ -21,6 +21,26 @@ msgctxt "#30001"
 msgid "Add to Trakt.tv"
 msgstr ""
 
+msgctxt "#30002"
+msgid "Downloading: %s..."
+msgstr ""
+
+msgctxt "#30003"
+msgid "Failed to create directory"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Failed to write file"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Download Complete: %s"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Error (%s) during download: %s"
+msgstr ""
+
 msgctxt "#30500"
 msgid "Trailer Source"
 msgstr ""
@@ -46,6 +66,30 @@ msgid "Movies Limit (0 = No Limit)"
 msgstr ""
 
 msgctxt "#30506"
-msgid "Max Quality"
+msgid "Max Stream Quality"
+msgstr ""
+
+msgctxt "#30507"
+msgid "Max Download Quality"
+msgstr ""
+
+msgctxt "#30508"
+msgid "Trailer Download Path"
+msgstr ""
+
+msgctxt "#30509"
+msgid "Show Download Progress"
+msgstr ""
+
+msgctxt "#30510"
+msgid "Off"
+msgstr ""
+
+msgctxt "#30511"
+msgid "Window"
+msgstr ""
+
+msgctxt "#30512"
+msgid "Background"
 msgstr ""
 

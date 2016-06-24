@@ -30,13 +30,12 @@ def __enum(**enums):
     return type('Enum', (), enums)
 
 MODES = __enum(
-    MAIN='main', TRAILERS='trailers', PLAY_TRAILER='play_trailer'
+    MAIN='main', TRAILERS='trailers', PLAY_TRAILER='play_trailer', DOWNLOAD_TRAILER='download_trailer'
 )
 
 url_dispatcher = URL_Dispatcher()
 scraper = trailer_scraper.Scraper()
 trailer_sources = [scraper.get_all_movies, scraper.get_exclusive_movies, scraper.get_most_popular_movies, scraper.get_most_recent_movies]
-Q_ORDER = {'sd': 1, 'hd720': 2, 'hd1080': 3}
 
 CP_ADD_URL = 'plugin://plugin.video.couchpotato_manager/movies/add?title=%s'
 TRAKT_ADD_URL = 'plugin://plugin.video.trakt_list_manager/movies/add?title=%s'
@@ -71,13 +70,21 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
     for trailer in scraper.get_trailers(location, movie_id):
         trailer['fanart'] = fanart
         trailer['poster'] = poster
-        trailer_url = get_best_stream(trailer['streams'])
+        stream_url = utils.get_best_stream(trailer['streams'], 'stream')
+        download_url = utils.get_best_stream(trailer['streams'], 'download')
         label = trailer['title']
         liz = utils.make_list_item(label, trailer)
         liz.setProperty('isPlayable', 'true')
         del trailer['streams']
         liz.setInfo('video', trailer)
-        queries = {'mode': MODES.PLAY_TRAILER, 'trailer_url': trailer_url, 'thumb': trailer.get('thumb', '')}
+
+        menu_items = []
+        queries = {'mode': MODES.DOWNLOAD_TRAILER, 'trailer_url': download_url, 'title': trailer['title'], 'year': trailer.get('year', '')}
+        runstring = 'RunPlugin(%s)' % kodi.get_plugin_url(queries)
+        menu_items.append(('Download Trailer', runstring),)
+        liz.addContextMenuItems(menu_items, replaceItems=True)
+        
+        queries = {'mode': MODES.PLAY_TRAILER, 'trailer_url': stream_url, 'thumb': trailer.get('thumb', '')}
         liz_url = kodi.get_plugin_url(queries)
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), liz_url, liz, isFolder=False)
     utils.set_view('movies')
@@ -92,15 +99,11 @@ def play_trailer(trailer_url, thumb=''):
     listitem.setPath(trailer_url)
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem)
     
-def get_best_stream(streams):
-    user_max = Q_ORDER.get(kodi.get_setting('trailer_quality'), 3)
-    best_quality = 0
-    best_stream = ''
-    for stream in streams:
-        if Q_ORDER[stream] > best_quality and Q_ORDER[stream] <= user_max:
-            best_quality = Q_ORDER[stream]
-            best_stream = streams[stream]
-    return best_stream
+@url_dispatcher.register(MODES.DOWNLOAD_TRAILER, ['trailer_url', 'title'], ['year'])
+def download_trailer(trailer_url, title, year=''):
+    path = kodi.get_setting('download_path')
+    file_name = utils.create_legal_filename(title, year)
+    utils.download_media(trailer_url, path, file_name)
 
 def main(argv=None):
     if sys.argv: argv = sys.argv

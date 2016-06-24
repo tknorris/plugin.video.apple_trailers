@@ -18,5 +18,10 @@
 
 STRINGS = {
     'add_to_cp': 30000,
-    'add_to_trakt': 30001
+    'add_to_trakt': 30001,
+    'downloading': 30002,
+    'failed_create_dir': 30003,
+    'failed_write_file': 30004,
+    'download_complete': 30005,
+    'download_error': 30006
 }

@@ -33,6 +33,7 @@ USER_AGENT = 'iTunes'
 BROWSER_UA = 'Mozilla/5.0 (compatible, MSIE 11, Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko'
 XHR = {'X-Requested-With': 'XMLHttpRequest'}
 SOURCES = ['srcAlt', 'src']
+RATINGS = {'NOTYETRATED': 'Not Yet Rated', 'PG13': 'PG-13', 'NC17': 'NC-17'}
 
 class Scraper(object):
     def __init__(self):
@@ -81,14 +82,15 @@ class Scraper(object):
             yield meta
             
     def get_trailers(self, location, movie_id):
+        page_url = urlparse.urljoin(BASE_URL, location)
         if not movie_id.isdigit():
-            page_url = urlparse.urljoin(BASE_URL, location)
             movie_id = self.__get_movie_id(page_url)
         
         if movie_id:
             headers = {'User-Agent': BROWSER_UA, 'Referer': page_url}
             headers.update(XHR)
             js_data = self.__get_json(TRAILERS_URL % (movie_id), headers)
+            log_utils.log(json.dumps(js_data))
             try: page = self.__get_page(js_data['page'])
             except: page = {}
             try: details = self.__get_details(js_data['details'])
@@ -133,8 +135,9 @@ class Scraper(object):
     def __get_page(self, page):
         movie_title = page.get('movie_title', '')
         release_date = page.get('release_date', '')
-        mpaa_rating = page.get('movie_rating', '')
-        return {'movie_title': movie_title, 'premiered': release_date, 'mpaa': mpaa_rating.upper(), 'year': release_date[:4]}
+        mpaa_rating = page.get('movie_rating', '').upper()
+        mpaa_rating = RATINGS.get(mpaa_rating, mpaa_rating)
+        return {'movie_title': movie_title, 'premiered': release_date, 'mpaa': mpaa_rating, 'year': release_date[:4]}
     
     def __get_details(self, details):
         try: plot = details['locale']['en']['synopsis']
