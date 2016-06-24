@@ -81,7 +81,6 @@ class Scraper(object):
             yield meta
             
     def get_trailers(self, location, movie_id):
-        trailers = []
         if not movie_id.isdigit():
             page_url = urlparse.urljoin(BASE_URL, location)
             movie_id = self.__get_movie_id(page_url)
@@ -90,51 +89,29 @@ class Scraper(object):
             headers = {'User-Agent': BROWSER_UA, 'Referer': page_url}
             headers.update(XHR)
             js_data = self.__get_json(TRAILERS_URL % (movie_id), headers)
-            try: movie_title = js_data['page']['movie_title']
-            except: movie_title = ''
-            try: release_date = js_data['page']['release_date']
-            except: release_date = ''
-            try: mpaa_rating = js_data['page']['movie_rating'].upper()
-            except: mpaa_rating = ''
-            try: plot = js_data['details']['locale']['en']['synopsis']
-            except: plot = ''
-            try: directors = self.__get_cast(js_data['details']['locale']['en']['castcrew']['directors'])
-            except: directors = []
-            try: writers = self.__get_cast(js_data['details']['locale']['en']['castcrew']['writers'])
-            except: writers = []
-            try: cast = self.__get_cast(js_data['details']['locale']['en']['castcrew']['actors'])
-            except: cast = []
-            try: genre = self.__get_genre(js_data['details']['genres'])
-            except: genre = []
-            try: rating = js_data['reviews']['rating']
-            except: rating = ''
-            try: votes = js_data['reviews']['count']
-            except: votes = ''
+            try: page = self.__get_page(js_data['page'])
+            except: page = {}
+            try: details = self.__get_details(js_data['details'])
+            except: details = {}
+            try: reviews = self.__get_reviews(js_data['reviews'])
+            except: reviews = {}
             if 'clips' in js_data:
                 for clip in js_data['clips']:
                     meta = {}
-                    if movie_title:
-                        meta['title'] = '%s (%s)' % (movie_title, clip.get('title', 'Trailer'))
+                    meta.update(page)
+                    meta.update(details)
+                    meta.update(reviews)
+
+                    if page['movie_title']:
+                        meta['title'] = '%s (%s)' % (page['movie_title'], clip.get('title', 'Trailer'))
                     else:
                         meta['title'] = clip.get('title', 'Trailer')
-                    meta['plot'] = plot
-                    meta['director'] = ', '.join(directors)
-                    meta['writer'] = ', '.join(writers)
-                    meta['cast'] = cast
-                    meta['genre'] = ', '.join(genre)
-                    meta['premiered'] = clip.get('posted', release_date)
-                    meta['year'] = meta['premiered'][:4]
-                    meta['mpaa'] = mpaa_rating
-                    meta['rating'] = rating
-                    meta['votes'] = votes
-                    meta['thumb'] = clip.get('screen', clip.get('thumb', ''))
-                    if 'screen' in clip: meta['thumb'] = clip['screen']
-                    if 'runtime' in clip: meta['duration'] = self.__get_duration(clip['runtime'], mult=1)
                     meta['studio'] = clip.get('artist', '')
+                    meta['thumb'] = clip.get('screen', clip.get('thumb', ''))
+                    if 'runtime' in clip: meta['duration'] = self.__get_duration(clip['runtime'], mult=1)
+                    if 'posted' in clip: meta['premiered'] = clip['posted']
                     meta['streams'] = self.__get_streams(clip)
-                    trailers.append(meta)
-        
-        return trailers
+                    yield meta
     
     def __get_extras(self):
         xml = self.__get_url(XML_URL)
@@ -152,6 +129,30 @@ class Scraper(object):
                 duration = '' if runtime is None else self.__get_duration(runtime.text)
                 plots[title] = {'id': movie.get('id', ''), 'plot': desc, 'duration': duration}
         return plots
+        
+    def __get_page(self, page):
+        movie_title = page.get('movie_title', '')
+        release_date = page.get('release_date', '')
+        mpaa_rating = page.get('movie_rating', '')
+        return {'movie_title': movie_title, 'premiered': release_date, 'mpaa': mpaa_rating.upper(), 'year': release_date[:4]}
+    
+    def __get_details(self, details):
+        try: plot = details['locale']['en']['synopsis']
+        except: plot = ''
+        try: directors = self.__get_cast(details['locale']['en']['castcrew']['directors'])
+        except: directors = []
+        try: writers = self.__get_cast(details['locale']['en']['castcrew']['writers'])
+        except: writers = []
+        try: cast = self.__get_cast(details['locale']['en']['castcrew']['actors'])
+        except: cast = []
+        try: genre = self.__get_genre(details['genres'])
+        except: genre = []
+        return {'plot': plot, 'director': ', '.join(directors), 'writer': ', '.join(writers), 'cast': cast, 'genre': ', '.join(genre)}
+    
+    def __get_reviews(self, reviews):
+        rating = reviews.get('rating', '')
+        votes = reviews('count', '')
+        return {'rating': rating, 'votes': votes}
         
     def __get_streams(self, clip):
         streams = {}
