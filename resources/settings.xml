@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    <setting id="source" type="enum" label="Source" default="0" lvalues="All|Exclusive|Most Popular|Most Recent"/>
+    <setting id="limit" type="slider" label="Movies Limit (0 = No Limit)" default="0" range="0,100" option="int"/>
+    <setting id="trailer_quality" type="enum" label="Max Quality" default="0" values="1080hd|720hd|sd"/>
+    <setting id="addon_debug" type="bool" label="Addon Debug" default="false" visible="true"/>
+</settings>
