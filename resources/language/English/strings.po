@@ -13,3 +13,39 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgctxt "#30000"
+msgid "Add to CouchPotato"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Add to Trakt.tv"
+msgstr ""
+
+msgctxt "#30500"
+msgid "Trailer Source"
+msgstr ""
+
+msgctxt "#30501"
+msgid "All"
+msgstr ""
+
+msgctxt "#30502"
+msgid "Exclusive"
+msgstr ""
+
+msgctxt "#30503"
+msgid "Most Popular"
+msgstr ""
+
+msgctxt "#30504"
+msgid "Most Recent"
+msgstr ""
+
+msgctxt "#30505"
+msgid "Movies Limit (0 = No Limit)"
+msgstr ""
+
+msgctxt "#30506"
+msgid "Max Quality"
+msgstr ""
+

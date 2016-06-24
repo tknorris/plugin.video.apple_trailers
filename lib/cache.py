@@ -53,7 +53,7 @@ def _get_func(name, args=None, kwargs=None, cache_limit=1):
         if mtime >= max_age:
             with open(full_path, 'r') as f:
                 pickled_result = f.read()
-            # log_utils.log('Returning cached result: |%s|%s|%s| - modtime: %s max_age: %s age: %ss' % (name, args, kwargs, mtime, max_age, now - mtime), log_utils.LOGDEBUG)
+            log_utils.log('Returning cached result: |%s|%s|%s| - modtime: %s max_age: %s age: %ss' % (name, args, kwargs, mtime, max_age, now - mtime), log_utils.LOGDEBUG)
             return True, pickle.loads(pickled_result)
     
     return False, None

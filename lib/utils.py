@@ -26,7 +26,6 @@ def make_list_item(label, meta):
     art = make_art(meta)
     listitem = xbmcgui.ListItem(label, iconImage=art['thumb'], thumbnailImage=art['thumb'])
     listitem.setProperty('fanart_image', art['fanart'])
-    listitem.setProperty('isPlayable', 'false')
     listitem.addStreamInfo('video', {})
     try: listitem.setArt(art)
     except: pass
@@ -36,6 +35,7 @@ def make_art(meta):
     art_dict = {'banner': '', 'fanart': '', 'thumb': '', 'poster': ''}
     if 'poster' in meta: art_dict['poster'] = meta['poster']
     if 'fanart' in meta: art_dict['fanart'] = meta['fanart']
+    if 'thumb' in meta: art_dict['thumb'] = meta['thumb']
     return art_dict
 
 def set_view(content, set_sort=False):

@@ -17,4 +17,6 @@
 """
 
 STRINGS = {
+    'add_to_cp': 30000,
+    'add_to_trakt': 30001
 }
