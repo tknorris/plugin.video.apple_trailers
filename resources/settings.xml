@@ -2,6 +2,7 @@
 <settings>
     <setting id="source" type="enum" label="30500" default="0" lvalues="30501|30502|30503|30504"/>
     <setting id="limit" type="slider" label="30505" default="0" range="0,100" option="int"/>
+    <setting id="cache_limit" type="enum" label="30514" default="0" lvalues="30515|30516|30517"/>
     <setting id="movies_view" label="30513" type="number" default="0" visible="true"/>
     <setting id="trailer_stream_quality" type="labelenum" label="30506" default="hd1080" values="hd1080|hd720|sd"/>
     <setting id="trailer_download_quality" type="labelenum" label="30507" default="hd1080" values="hd1080|hd720|sd"/>

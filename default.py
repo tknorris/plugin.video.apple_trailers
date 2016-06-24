@@ -18,12 +18,13 @@
 import sys
 import xbmcplugin
 import xbmcgui
-from lib.url_dispatcher import URL_Dispatcher
 from lib import kodi
 from lib.kodi import i18n
 from lib import trailer_scraper
 from lib import log_utils
 from lib import utils
+from lib import cache
+from lib.url_dispatcher import URL_Dispatcher
 from lib.trailer_scraper import BROWSER_UA
 
 def __enum(**enums):

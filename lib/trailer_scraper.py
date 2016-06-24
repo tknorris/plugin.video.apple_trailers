@@ -20,6 +20,7 @@ import urllib2
 import urlparse
 import json
 import log_utils
+import kodi
 import cache
 from email.utils import parsedate_tz
 import xml.etree.ElementTree as ET
@@ -34,6 +35,10 @@ BROWSER_UA = 'Mozilla/5.0 (compatible, MSIE 11, Windows NT 6.3; Trident/7.0; rv:
 XHR = {'X-Requested-With': 'XMLHttpRequest'}
 SOURCES = ['srcAlt', 'src']
 RATINGS = {'NOTYETRATED': 'Not Yet Rated', 'PG13': 'PG-13', 'NC17': 'NC-17'}
+CACHE_LIMITS = [24, 12, 8]
+
+try: cache_limit = CACHE_LIMITS[int(kodi.get_setting('cache_limit'))]
+except: cache_limit = 24
 
 class Scraper(object):
     def __init__(self):
@@ -204,7 +209,7 @@ class Scraper(object):
         except ValueError:
             return {}
 
-    @cache.cache_method(cache_limit=8)
+    @cache.cache_method(cache_limit=cache_limit)
     def __get_url(self, url, headers=None):
         if headers is None:
             headers = {'User-Agent': USER_AGENT}

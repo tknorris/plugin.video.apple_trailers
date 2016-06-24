@@ -109,3 +109,19 @@ msgctxt "#30513"
 msgid "Trailers View ID"
 msgstr ""
 
+msgctxt "#30514"
+msgid "Movies Cache Duration"
+msgstr ""
+
+msgctxt "#30515"
+msgid "24 Hours"
+msgstr ""
+
+msgctxt "#30516"
+msgid "12 Hours"
+msgstr ""
+
+msgctxt "#30517"
+msgid "8 Hours"
+msgstr ""
+
