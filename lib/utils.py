@@ -44,7 +44,7 @@ def set_view(content, set_sort=False):
         kodi.set_content(content)
 
     view = kodi.get_setting('%s_view' % (content))
-    if view != '0':
+    if view and view != '0':
         log_utils.log('Setting View to %s (%s)' % (view, content), log_utils.LOGDEBUG)
         xbmc.executebuiltin('Container.SetViewMode(%s)' % (view))
 

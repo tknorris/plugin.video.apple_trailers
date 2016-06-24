@@ -32,7 +32,7 @@ USER_AGENT = 'iTunes'
 
 class Scraper(object):
     def __init__(self):
-        self.plots = self.__get_plots()
+        self.extras = self.__get_extras()
         
     def get_all_movies(self, limit=0):
         return self.__get_movies('studios', limit)
@@ -48,7 +48,6 @@ class Scraper(object):
         
     def __get_movies(self, source, limit):
         for i, movie in enumerate(self.__get_movies_json(source)):
-            log_utils.log(movie)
             if limit and i >= limit: break
             meta = {}
             meta['mediatype'] = 'movie'
@@ -62,13 +61,15 @@ class Scraper(object):
             meta['director'] = movie.get('directors', '')
             meta['genre'] = ', '.join(movie.get('genre', []))
             meta['cast'] = movie.get('actors', [])
-            plot = self.plots.get(meta['title'], {})
-            meta['movie_id'] = plot.get('id', '')
-            meta['plot'] = meta['plotoutline'] = plot.get('plot', '')
             meta['location'] = movie.get('location', '')
+            
+            extras = self.extras.get(meta['title'], {})
+            meta['movie_id'] = extras.get('id', '')
+            meta['plot'] = meta['plotoutline'] = extras.get('plot', '')
+            if 'duration' in extras and extras['duration']: meta['duration'] = extras['duration']
             yield meta
             
-    def __get_plots(self):
+    def __get_extras(self):
         xml = self.__get_url(XML_URL)
         xml = re.sub('[^\x00-\x7F]', '', xml)
         xml = re.sub('[\x01-\x08\x0B-\x0C\x0E-\x1F]', '', xml)
@@ -78,9 +79,21 @@ class Scraper(object):
             info = movie.find('info')
             title = info.find('title').text
             if title:
-                plots[title] = {'id': movie.get('id'), 'plot': info.find('description').text}
+                desc = info.find('description')
+                desc = '' if desc is None else desc.text
+                runtime = info.find('runtime')
+                duration = '' if runtime is None else self.__get_duration(runtime.text)
+                plots[title] = {'id': movie.get('id', ''), 'plot': desc, 'duration': duration}
         return plots
         
+    def __get_duration(self, runtime):
+        mult = 60
+        duration = 0
+        for time in runtime.split(':')[::-1]:
+            duration += int(time) * mult
+            mult *= 60
+        return duration
+    
     def __parse_date(self, date_str):
         if date_str:
             d = parsedate_tz(date_str)
