@@ -25,20 +25,23 @@ from lib import log_utils
 from lib import utils
 from lib.url_dispatcher import URL_Dispatcher
 from lib.trailer_scraper import BROWSER_UA
+from lib.trakt_api import Trakt_API, TransientTraktError, TraktError, TraktAuthError
+from lib.trakt_api import SECTIONS
+from lib.utils import WATCHLIST_SLUG
 
 def __enum(**enums):
     return type('Enum', (), enums)
 
 MODES = __enum(
-    MAIN='main', TRAILERS='trailers', PLAY_TRAILER='play_trailer', DOWNLOAD_TRAILER='download_trailer', AUTH_TRAKT='auth_trakt'
+    MAIN='main', TRAILERS='trailers', PLAY_TRAILER='play_trailer', DOWNLOAD_TRAILER='download_trailer', AUTH_TRAKT='auth_trakt', SET_LIST='set_list',
+    ADD_TRAKT='add_trakt'
 )
 
 url_dispatcher = URL_Dispatcher()
 scraper = trailer_scraper.Scraper()
-trailer_sources = [scraper.get_all_movies, scraper.get_exclusive_movies, scraper.get_most_popular_movies, scraper.get_most_recent_movies]
 
+TRAILER_SOURCES = [scraper.get_all_movies, scraper.get_exclusive_movies, scraper.get_most_popular_movies, scraper.get_most_recent_movies]
 CP_ADD_URL = 'plugin://plugin.video.couchpotato_manager/movies/add?title=%s'
-TRAKT_ADD_URL = 'plugin://plugin.video.trakt_list_manager/movies/add?title=%s'
 
 @url_dispatcher.register(MODES.MAIN)
 def main_menu():
@@ -46,15 +49,21 @@ def main_menu():
     except: limit = 0
     try: source = int(kodi.get_setting('source'))
     except: source = 0
-    for movie in trailer_sources[source](limit):
+    list_data = utils.make_list_dict()
+    for movie in TRAILER_SOURCES[source](limit):
         label = movie['title']
+        if label in list_data:
+            if not movie['year'] or not list_data[label] or int(movie['year']) in list_data[label]:
+                label = '[COLOR green]%s[/COLOR]' % (label)
+        
         liz = utils.make_list_item(label, movie)
         liz.setInfo('video', movie)
         
         menu_items = []
         runstring = 'RunPlugin(%s)' % (CP_ADD_URL % (movie['title']))
         menu_items.append((i18n('add_to_cp'), runstring),)
-        runstring = 'RunPlugin(%s)' % (TRAKT_ADD_URL % (movie['title']))
+        queries = {'mode': MODES.ADD_TRAKT, 'title': movie['title'], 'year': movie.get('year', '')}
+        runstring = 'RunPlugin(%s)' % (kodi.get_plugin_url(queries))
         menu_items.append((i18n('add_to_trakt'), runstring),)
         liz.addContextMenuItems(menu_items, replaceItems=True)
         
@@ -79,7 +88,7 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
 
         menu_items = []
         queries = {'mode': MODES.DOWNLOAD_TRAILER, 'trailer_url': download_url, 'title': trailer['title'], 'year': trailer.get('year', '')}
-        runstring = 'RunPlugin(%s)' % kodi.get_plugin_url(queries)
+        runstring = 'RunPlugin(%s)' % (kodi.get_plugin_url(queries))
         menu_items.append(('Download Trailer', runstring),)
         liz.addContextMenuItems(menu_items, replaceItems=True)
         
@@ -112,10 +121,55 @@ def download_trailer(trailer_url, title, year=''):
     file_name = utils.create_legal_filename(title, year)
     utils.download_media(trailer_url, path, file_name)
 
+@url_dispatcher.register(MODES.ADD_TRAKT, ['title'], ['year'])
+def add_trakt(title, year=''):
+    trakt_api = Trakt_API(kodi.get_setting('trakt_oauth_token'), kodi.get_setting('use_https') == 'true', timeout=int(kodi.get_setting('trakt_timeout')))
+    results = trakt_api.search(SECTIONS.MOVIES, title)
+    try: results = [result for result in results if result['year'] is not None and int(result['year']) - 1 <= int(year) <= int(result['year'] + 1)]
+    except: pass
+    if not results:
+        kodi.notify(msg=i18n('no_movie_found'))
+        return
+    
+    if len(results) == 1:
+        index = 0
+    else:
+        pick_list = [movie['title'] if movie['year'] is None else '%s (%s)' % (movie['title'], movie['year']) for movie in results]
+        index = xbmcgui.Dialog().select(i18n('pick_a_movie'), pick_list)
+        
+    if index > -1:
+        slug = kodi.get_setting('default_slug')
+        if not slug:
+            result = utils.choose_list()
+            if result is None:
+                return
+            else:
+                slug, name = result
+        
+        item = {'trakt': results[index]['ids']['trakt']}
+        if slug == WATCHLIST_SLUG:
+            trakt_api.add_to_watchlist(SECTIONS.MOVIES, item)
+            name = 'Watchlist'
+        elif slug:
+            trakt_api.add_to_list(SECTIONS.MOVIES, slug, item)
+            
+        movie = results[index]
+        label = movie['title'] if movie['year'] is None else '%s (%s)' % (movie['title'], movie['year'])
+        kodi.notify(msg=i18n('added_to_list') % (label, name))
+        kodi.refresh_container()
+
 @url_dispatcher.register(MODES.AUTH_TRAKT)
 def auth_trakt():
     utils.auth_trakt()
  
+@url_dispatcher.register(MODES.SET_LIST)
+def set_list():
+    result = utils.choose_list()
+    if result is not None:
+        slug, name = result
+        kodi.set_setting('default_list', name)
+        kodi.set_setting('default_slug', slug)
+
 def main(argv=None):
     if sys.argv: argv = sys.argv
     queries = kodi.parse_query(sys.argv[2])
@@ -127,8 +181,12 @@ def main(argv=None):
     if argv[0] != plugin_url:
         return
 
-    mode = queries.get('mode', None)
-    url_dispatcher.dispatch(mode, queries)
+    try:
+        mode = queries.get('mode', None)
+        url_dispatcher.dispatch(mode, queries)
+    except (TransientTraktError, TraktError, TraktAuthError) as e:
+        log_utils.log(str(e), log_utils.LOGERROR)
+        kodi.notify(msg=str(e), duration=5000)
 
 if __name__ == '__main__':
     sys.exit(main())

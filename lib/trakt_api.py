@@ -50,12 +50,14 @@ V2_API_KEY = '587669004d4fe02bcde9b1ff4a5db964574c2db2afadd8fdf0e0690ef0155fc8'
 CLIENT_SECRET = '09e94c82e96fe2f322cc4436d6d048f84ecb1feda58efb003372c4a86599980e'
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
 HIDDEN_SIZE = 100
+RESULTS_LIMIT = 10
 
 class Trakt_API():
-    def __init__(self, token=None, use_https=False, timeout=5):
+    def __init__(self, token=None, use_https=False, list_size=RESULTS_LIMIT, timeout=5):
         self.token = token
         self.protocol = 'https://' if use_https else 'http://'
         self.timeout = None if timeout == 0 else timeout
+        self.list_size = list_size
 
     def get_code(self):
         url = '/oauth/device/code'
@@ -86,7 +88,8 @@ class Trakt_API():
             cache_limit = 1  # cache other user's list for one hour
 
         url = '/users/%s/lists/%s/items' % (utils.to_slug(username), slug)
-        params = {'extended': 'full,images'}
+        # params = {'extended': 'full,images'}
+        params = None
         list_data = self.__call_trakt(url, params=params, auth=auth, cache_limit=cache_limit, cached=cached)
         return [item[item['type']] for item in list_data if item['type'] == TRAKT_SECTIONS[section][:-1]]
 
@@ -139,6 +142,14 @@ class Trakt_API():
         
         return result
     
+    def search(self, section, query, page=None):
+        url = '/search'
+        params = {'type': TRAKT_SECTIONS[section][:-1], 'query': query, 'limit': self.list_size}
+        if page: params['page'] = page
+        # params.update({'extended': 'full,images'})
+        response = self.__call_trakt(url, params=params)
+        return [item[TRAKT_SECTIONS[section][:-1]] for item in response]
+
     def __get_cache_limit(self, media, activity, cached):
         if cached:
             activity = self.get_last_activity(media, activity)
@@ -198,6 +209,7 @@ class Trakt_API():
                         data = response.read()
                         if not data: break
                         result += data
+                    cache._save_func(func_name, args=args, kwargs=kwargs, result=result)
                     break
                 except (ssl.SSLError, socket.timeout) as e:
                     if cached_result:
@@ -249,8 +261,6 @@ class Trakt_API():
 
         try:
             js_data = utils.json_loads_as_str(result)
-            if not cached:
-                cache._save_func(func_name, args=args, kwargs=kwargs, result=js_data)
         except ValueError:
             js_data = ''
             if result:

@@ -33,6 +33,7 @@ import log_utils
 from trakt_api import Trakt_API
 from kodi import i18n
 from trailer_scraper import BROWSER_UA
+from trakt_api import SECTIONS
 
 def __enum(**enums):
     return type('Enum', (), enums)
@@ -47,6 +48,7 @@ TRAKT_SORT = __enum(TITLE='title', ACTIVITY='activity', MOST_COMPLETED='most-com
 TRAKT_LIST_SORT = __enum(RANK='rank', RECENTLY_ADDED='added', TITLE='title', RELEASE_DATE='released', RUNTIME='runtime', POPULARITY='popularity',
                          PERCENTAGE='percentage', VOTES='votes')
 TRAKT_SORT_DIR = __enum(ASCENDING='asc', DESCENDING='desc')
+WATCHLIST_SLUG = 'watchlist_slug'
 
 
 def make_list_item(label, meta):
@@ -293,3 +295,32 @@ def auth_trakt():
     except Exception as e:
         log_utils.log('Trakt Authorization Failed: %s' % (e), log_utils.LOGDEBUG)
 
+def make_list_dict():
+    slug = kodi.get_setting('default_slug')
+    token = kodi.get_setting('trakt_oauth_token')
+    list_data = {}
+    if token and slug:
+        trakt_api = Trakt_API(token, kodi.get_setting('use_https') == 'true', timeout=int(kodi.get_setting('trakt_timeout')))
+        if slug == WATCHLIST_SLUG:
+            trakt_list = trakt_api.show_watchlist(SECTIONS.MOVIES)
+        else:
+            trakt_list = trakt_api.show_list(slug, SECTIONS.MOVIES)
+        for movie in trakt_list:
+            list_data[movie['title']] = list_data.get(movie['title'], set())
+            if movie['year'] is not None:
+                new_set = set([movie['year'] - 1, movie['year'], movie['year'] + 1])
+                list_data[movie['title']].update(new_set)
+    log_utils.log('List Dict: %s: %s' % (slug, list_data))
+    return list_data
+
+def choose_list(username=None):
+    trakt_api = Trakt_API(kodi.get_setting('trakt_oauth_token'), kodi.get_setting('use_https') == 'true', timeout=int(kodi.get_setting('trakt_timeout')))
+    lists = trakt_api.get_lists(username)
+    if username is None: lists.insert(0, {'name': 'watchlist', 'ids': {'slug': WATCHLIST_SLUG}})
+    if lists:
+        dialog = xbmcgui.Dialog()
+        index = dialog.select(i18n('pick_a_list'), [list_data['name'] for list_data in lists])
+        if index > -1:
+            return (lists[index]['ids']['slug'], lists[index]['name'])
+    else:
+        kodi.notify(msg=i18n('no_lists_for_user') % (username), duration=5000)

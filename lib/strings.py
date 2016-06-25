@@ -32,5 +32,10 @@ STRINGS = {
     'code_expires': 30012,
     'trakt_acct_auth': 30013,
     'user_reject_auth': 30014,
-    'trakt_auth_complete': 30015
+    'trakt_auth_complete': 30015,
+    'pick_a_list': 30016,
+    'no_lists_for_user': 30017,
+    'no_movie_found': 30018,
+    'pick_a_movie': 30019,
+    'added_to_list': 30020
 }

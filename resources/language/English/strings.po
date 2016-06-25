@@ -77,6 +77,26 @@ msgctxt "#30015"
 msgid "Trakt Authorization Complete"
 msgstr ""
 
+msgctxt "#30016"
+msgid "Pick a list"
+msgstr ""
+
+msgctxt "#30017"
+msgid "No Lists exist for user: %s"
+msgstr ""
+
+msgctxt "#30018"
+msgid "No Matching Movie Found"
+msgstr ""
+
+msgctxt "#30019"
+msgid "Pick a Movie"
+msgstr ""
+
+msgctxt "#30020"
+msgid "%s added to %s"
+msgstr ""
+
 msgctxt "#30500"
 msgid "Trailer Source"
 msgstr ""
@@ -150,7 +170,7 @@ msgid "8 Hours"
 msgstr ""
 
 msgctxt "#30518"
-msgid "How do I authorize the addon to access my trakt.tv account?"
+msgid "How do I authorize this addon to access my trakt.tv account?"
 msgstr ""
 
 msgctxt "#30519"
@@ -163,4 +183,16 @@ msgstr ""
 
 msgctxt "#30521"
 msgid "Trakt Timeout (seconds) (0=No Limit)"
+msgstr ""
+
+msgctxt "#30522"
+msgid "Default Trakt List"
+msgstr ""
+
+msgctxt "#30523"
+msgid "Trailers"
+msgstr ""
+
+msgctxt "#30524"
+msgid "Download"
 msgstr ""
