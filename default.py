@@ -66,7 +66,7 @@ def main_menu():
         queries = {'mode': MODES.ADD_TRAKT, 'title': movie['title'], 'year': movie.get('year', '')}
         runstring = 'RunPlugin(%s)' % (kodi.get_plugin_url(queries))
         menu_items.append((i18n('add_to_trakt'), runstring),)
-        liz.addContextMenuItems(menu_items, replaceItems=True)
+        liz.addContextMenuItems(menu_items, replaceItems=False)
         
         queries = {'mode': MODES.TRAILERS, 'movie_id': movie['movie_id'], 'location': movie['location'], 'poster': movie.get('poster', ''), 'fanart': movie.get('fanart', '')}
         liz_url = kodi.get_plugin_url(queries)
@@ -91,7 +91,7 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
         queries = {'mode': MODES.DOWNLOAD_TRAILER, 'trailer_url': download_url, 'title': trailer['title'], 'year': trailer.get('year', '')}
         runstring = 'RunPlugin(%s)' % (kodi.get_plugin_url(queries))
         menu_items.append(('Download Trailer', runstring),)
-        liz.addContextMenuItems(menu_items, replaceItems=True)
+        liz.addContextMenuItems(menu_items, replaceItems=False)
         
         queries = {'mode': MODES.PLAY_TRAILER, 'trailer_url': stream_url, 'thumb': trailer.get('thumb', '')}
         liz_url = kodi.get_plugin_url(queries)
