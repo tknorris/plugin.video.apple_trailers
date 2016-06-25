@@ -48,7 +48,6 @@ def main_menu():
     except: source = 0
     for movie in trailer_sources[source](limit):
         label = movie['title']
-        if 'year' in movie and movie['year']: label += ' (%s)' % (movie['year'])
         liz = utils.make_list_item(label, movie)
         liz.setInfo('video', movie)
         
