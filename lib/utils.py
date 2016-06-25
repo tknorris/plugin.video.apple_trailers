@@ -21,22 +21,33 @@ import os
 import urllib2
 import urllib
 import urlparse
+import datetime
+import time
+import json
 import xbmcgui
 import xbmc
 import xbmcplugin
 import xbmcvfs
 import kodi
 import log_utils
+from trakt_api import Trakt_API
 from kodi import i18n
 from trailer_scraper import BROWSER_UA
 
 def __enum(**enums):
     return type('Enum', (), enums)
 
+INTERVALS = 5
 Q_ORDER = {'sd': 1, 'hd720': 2, 'hd1080': 3}
 PROGRESS = __enum(OFF=0, WINDOW=1, BACKGROUND=2)
 CHUNK_SIZE = 512 * 1024
 DEFAULT_EXT = '.mpg'
+TRAKT_SORT = __enum(TITLE='title', ACTIVITY='activity', MOST_COMPLETED='most-completed', LEAST_COMPLETED='least-completed', RECENTLY_AIRED='recently-aired',
+                    PREVIOUSLY_AIRED='previously-aired')
+TRAKT_LIST_SORT = __enum(RANK='rank', RECENTLY_ADDED='added', TITLE='title', RELEASE_DATE='released', RUNTIME='runtime', POPULARITY='popularity',
+                         PERCENTAGE='percentage', VOTES='votes')
+TRAKT_SORT_DIR = __enum(ASCENDING='asc', DESCENDING='desc')
+
 
 def make_list_item(label, meta):
     art = make_art(meta)
@@ -175,3 +186,110 @@ def get_best_stream(streams, method='stream'):
             best_quality = Q_ORDER[stream]
             best_stream = streams[stream]
     return best_stream
+
+def to_slug(username):
+    username = username.strip()
+    username = username.lower()
+    username = re.sub('[^a-z0-9_]', '-', username)
+    username = re.sub('--+', '-', username)
+    return username
+
+def iso_2_utc(iso_ts):
+    if not iso_ts or iso_ts is None: return 0
+    delim = -1
+    if not iso_ts.endswith('Z'):
+        delim = iso_ts.rfind('+')
+        if delim == -1: delim = iso_ts.rfind('-')
+
+    if delim > -1:
+        ts = iso_ts[:delim]
+        sign = iso_ts[delim]
+        tz = iso_ts[delim + 1:]
+    else:
+        ts = iso_ts
+        tz = None
+
+    if ts.find('.') > -1:
+        ts = ts[:ts.find('.')]
+
+    try: d = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
+    except TypeError: d = datetime.datetime(*(time.strptime(ts, '%Y-%m-%dT%H:%M:%S')[0:6]))
+
+    dif = datetime.timedelta()
+    if tz:
+        hours, minutes = tz.split(':')
+        hours = int(hours)
+        minutes = int(minutes)
+        if sign == '-':
+            hours = -hours
+            minutes = -minutes
+        dif = datetime.timedelta(minutes=minutes, hours=hours)
+    utc_dt = d - dif
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    delta = utc_dt - epoch
+    try: seconds = delta.total_seconds()  # works only on 2.7
+    except: seconds = delta.seconds + delta.days * 24 * 3600  # close enough
+    return seconds
+
+def json_load_as_str(file_handle):
+    return _byteify(json.load(file_handle, object_hook=_byteify), ignore_dicts=True)
+
+def json_loads_as_str(json_text):
+    return _byteify(json.loads(json_text, object_hook=_byteify), ignore_dicts=True)
+
+def _byteify(data, ignore_dicts=False):
+    if isinstance(data, unicode):
+        return data.encode('utf-8')
+    if isinstance(data, list):
+        return [_byteify(item, ignore_dicts=True) for item in data]
+    if isinstance(data, dict) and not ignore_dicts:
+        return dict([(_byteify(key, ignore_dicts=True), _byteify(value, ignore_dicts=True)) for key, value in data.iteritems()])
+    return data
+
+def auth_trakt():
+    start = time.time()
+    use_https = kodi.get_setting('use_https') == 'true'
+    trakt_timeout = int(kodi.get_setting('trakt_timeout'))
+    trakt_api = Trakt_API(use_https=use_https, timeout=trakt_timeout)
+    result = trakt_api.get_code()
+    code, expires, interval = result['device_code'], result['expires_in'], result['interval']
+    time_left = expires - int(time.time() - start)
+    line1 = i18n('verification_url') % (result['verification_url'])
+    line2 = i18n('prompt_code') % (result['user_code'])
+    line3 = i18n('code_expires') % (time_left)
+    with kodi.ProgressDialog(i18n('trakt_acct_auth'), line1=line1, line2=line2, line3=line3) as pd:
+        pd.update(100)
+        while time_left:
+            for _ in range(INTERVALS):
+                kodi.sleep(interval * 1000 / INTERVALS)
+                if pd.is_canceled(): return
+
+            try:
+                result = trakt_api.get_device_token(code)
+                break
+            except urllib2.URLError as e:
+                # authorization is pending; too fast
+                if e.code in [400, 429]:
+                    pass
+                elif e.code == 418:
+                    kodi.notify(msg=i18n('user_reject_auth'), duration=3000)
+                    return
+                elif e.code == 410:
+                    break
+                else:
+                    raise
+                
+            time_left = expires - int(time.time() - start)
+            progress = time_left * 100 / expires
+            pd.update(progress, line3=i18n('code_expires') % (time_left))
+        
+    try:
+        kodi.set_setting('trakt_oauth_token', result['access_token'])
+        kodi.set_setting('trakt_refresh_token', result['refresh_token'])
+        trakt_api = Trakt_API(result['access_token'], use_https=use_https, timeout=trakt_timeout)
+        profile = trakt_api.get_user_profile(cached=False)
+        kodi.set_setting('trakt_user', '%s (%s)' % (profile['username'], profile['name']))
+        kodi.notify(msg=i18n('trakt_auth_complete'), duration=3000)
+    except Exception as e:
+        log_utils.log('Trakt Authorization Failed: %s' % (e), log_utils.LOGDEBUG)
+

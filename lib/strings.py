@@ -26,5 +26,11 @@ STRINGS = {
     'download_error': 30006,
     'no_download_path': 30007,
     'cancel': 30008,
-    'set_it_now': 30009
+    'set_it_now': 30009,
+    'verification_url': 30010,
+    'prompt_code': 30011,
+    'code_expires': 30012,
+    'trakt_acct_auth': 30013,
+    'user_reject_auth': 30014,
+    'trakt_auth_complete': 30015
 }

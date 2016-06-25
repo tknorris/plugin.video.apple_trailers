@@ -23,7 +23,6 @@ from lib.kodi import i18n
 from lib import trailer_scraper
 from lib import log_utils
 from lib import utils
-from lib import cache
 from lib.url_dispatcher import URL_Dispatcher
 from lib.trailer_scraper import BROWSER_UA
 
@@ -31,7 +30,7 @@ def __enum(**enums):
     return type('Enum', (), enums)
 
 MODES = __enum(
-    MAIN='main', TRAILERS='trailers', PLAY_TRAILER='play_trailer', DOWNLOAD_TRAILER='download_trailer'
+    MAIN='main', TRAILERS='trailers', PLAY_TRAILER='play_trailer', DOWNLOAD_TRAILER='download_trailer', AUTH_TRAKT='auth_trakt'
 )
 
 url_dispatcher = URL_Dispatcher()
@@ -114,6 +113,10 @@ def download_trailer(trailer_url, title, year=''):
     file_name = utils.create_legal_filename(title, year)
     utils.download_media(trailer_url, path, file_name)
 
+@url_dispatcher.register(MODES.AUTH_TRAKT)
+def auth_trakt():
+    utils.auth_trakt()
+ 
 def main(argv=None):
     if sys.argv: argv = sys.argv
     queries = kodi.parse_query(sys.argv[2])

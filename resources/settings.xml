@@ -8,6 +8,12 @@
     <setting id="trailer_download_quality" type="labelenum" label="30507" default="hd1080" values="hd1080|hd720|sd"/>
     <setting id="down_progress" type="enum" label="30509" lvalues="30510|30511|30512" default="1"/>
     <setting id="download_path" type="folder" label="30508" source="auto" option="writeable"/>
+    <setting id="get_pin" label="30518" type="action" action="RunPlugin(plugin://plugin.video.apple_trailers/?mode=auth_trakt)" option="close" visible="eq(1,))"/>
+    <setting id="trakt_user" label="30519" type="action" action="RunPlugin(plugin://plugin.video.apple_trailers/?mode=auth_trakt)" option="close" visible="!eq(0,)"/>
+    <setting id="use_https" type="bool" label="30520" default="false"/>
+    <setting id="trakt_timeout" type="slider" label="30521" default="30" range="0,120" option="int"/>
+    <setting id="trakt_oauth_token" type="text" default="" visible="false"/>
+    <setting id="trakt_refresh_token" type="text" default="" visible="false"/>
     <setting id="addon_debug" type="bool" label="Addon Debug" default="false" visible="true"/>
     <setting id="use_cache" type="bool" label="Cache Enabled" default="false" visible="true"/>
 </settings>
