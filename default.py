@@ -52,8 +52,9 @@ def main_menu():
     list_data = utils.make_list_dict()
     for movie in TRAILER_SOURCES[source](limit):
         label = movie['title']
-        if label in list_data:
-            if not movie['year'] or not list_data[label] or int(movie['year']) in list_data[label]:
+        key = movie['title'].upper()
+        if key in list_data:
+            if not movie['year'] or not list_data[key] or int(movie['year']) in list_data[key]:
                 label = '[COLOR green]%s[/COLOR]' % (label)
         
         liz = utils.make_list_item(label, movie)
