@@ -1,3 +1,6 @@
+[B]Version 0.0.3[/B]
+- Cache movies list for 8 hours at a time
+
 [B]Version 0.0.2[/B]
 - Improve Movie matching
 - Don't replace context menus
