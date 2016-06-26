@@ -23,6 +23,7 @@ from lib.kodi import i18n
 from lib import trailer_scraper
 from lib import log_utils
 from lib import utils
+from lib import cache
 from lib.url_dispatcher import URL_Dispatcher
 from lib.trailer_scraper import BROWSER_UA
 from lib.trakt_api import Trakt_API, TransientTraktError, TraktError, TraktAuthError
@@ -50,7 +51,9 @@ def main_menu():
     try: source = int(kodi.get_setting('source'))
     except: source = 0
     list_data = utils.make_list_dict()
-    for movie in TRAILER_SOURCES[source](limit):
+    import time
+    begin = time.time()
+    for movie in get_movies(source, limit):
         label = movie['title']
         key = movie['title'].upper()
         if key in list_data:
@@ -71,8 +74,13 @@ def main_menu():
         queries = {'mode': MODES.TRAILERS, 'movie_id': movie['movie_id'], 'location': movie['location'], 'poster': movie.get('poster', ''), 'fanart': movie.get('fanart', '')}
         liz_url = kodi.get_plugin_url(queries)
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), liz_url, liz, isFolder=True)
+    log_utils.log('Time: %s' % (time.time() - begin))
     utils.set_view('movies', set_sort=True)
     kodi.end_of_directory(cache_to_disc=False)
+
+@cache.cache_function(cache_limit=8)
+def get_movies(source, limit):
+    return [movie for movie in TRAILER_SOURCES[source](limit)]
 
 @url_dispatcher.register(MODES.TRAILERS, ['location'], ['movie_id', 'poster', 'fanart'])
 def show_trailers(location, movie_id='', poster='', fanart=''):

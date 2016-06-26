@@ -18,7 +18,7 @@
 import functools
 import log_utils
 import time
-import pickle
+import cPickle as pickle
 import hashlib
 import os
 import shutil
