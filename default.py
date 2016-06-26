@@ -51,8 +51,6 @@ def main_menu():
     try: source = int(kodi.get_setting('source'))
     except: source = 0
     list_data = utils.make_list_dict()
-    import time
-    begin = time.time()
     for movie in get_movies(source, limit):
         label = movie['title']
         key = movie['title'].upper()
@@ -74,7 +72,6 @@ def main_menu():
         queries = {'mode': MODES.TRAILERS, 'movie_id': movie['movie_id'], 'location': movie['location'], 'poster': movie.get('poster', ''), 'fanart': movie.get('fanart', '')}
         liz_url = kodi.get_plugin_url(queries)
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), liz_url, liz, isFolder=True)
-    log_utils.log('Time: %s' % (time.time() - begin))
     utils.set_view('movies', set_sort=True)
     kodi.end_of_directory(cache_to_disc=False)
 
