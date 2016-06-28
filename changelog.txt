@@ -1,3 +1,6 @@
+[B]Version 0.0.4[/B]
+- Better handle missing years
+
 [B]Version 0.0.3[/B]
 - Cache movies list for 8 hours at a time
 
