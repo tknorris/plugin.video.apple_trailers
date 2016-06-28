@@ -146,6 +146,7 @@ class Scraper(object):
         release_date = page.get('release_date', '')
         if release_date:
             meta['premiered'] = release_date
+            meta['year'] = release_date[:4]
         return meta
     
     def __get_details(self, details):
