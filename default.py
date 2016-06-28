@@ -55,7 +55,7 @@ def main_menu():
         label = movie['title']
         key = movie['title'].upper()
         if key in list_data:
-            if not movie['year'] or not list_data[key] or int(movie['year']) in list_data[key]:
+            if 'year' not in movie or not movie['year'] or not list_data[key] or int(movie['year']) in list_data[key]:
                 label = '[COLOR green]%s[/COLOR]' % (label)
         
         liz = utils.make_list_item(label, movie)

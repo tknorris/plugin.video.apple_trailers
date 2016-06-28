@@ -69,8 +69,10 @@ class Scraper(object):
             meta = {}
             meta['mediatype'] = 'movie'
             meta['title'] = movie['title']
-            meta['premiered'] = meta['aired'] = self.__parse_date(movie.get('releasedate'))
-            meta['year'] = meta['premiered'][:4]
+            premiered = self.__parse_date(movie.get('releasedate'))
+            if premiered:
+                meta['premiered'] = meta['aired'] = premiered
+                meta['year'] = meta['premiered'][:4]
             meta['poster'] = self.__make_poster(movie['poster'])
             meta['fanart'] = self.__make_background(movie['poster'])
             meta['studio'] = movie.get('studio', '')
@@ -138,10 +140,13 @@ class Scraper(object):
         
     def __get_page(self, page):
         movie_title = page.get('movie_title', '')
-        release_date = page.get('release_date', '')
         mpaa_rating = page.get('movie_rating', '').upper()
         mpaa_rating = RATINGS.get(mpaa_rating, mpaa_rating)
-        return {'movie_title': movie_title, 'premiered': release_date, 'mpaa': mpaa_rating, 'year': release_date[:4]}
+        meta = {'movie_title': movie_title, 'mpaa': mpaa_rating}
+        release_date = page.get('release_date', '')
+        if release_date:
+            meta['premiered'] = release_date
+        return meta
     
     def __get_details(self, details):
         try: plot = details['locale']['en']['synopsis']
