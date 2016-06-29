@@ -66,6 +66,7 @@ class Scraper(object):
     def __get_movies(self, source, limit):
         for i, movie in enumerate(self.__get_json(MOVIES_URL % (source))):
             if limit and i >= limit: break
+            log_utils.log('movie: %s' % (movie))
             meta = {}
             meta['mediatype'] = 'movie'
             meta['title'] = meta['originaltitle'] = movie['title']
@@ -86,12 +87,13 @@ class Scraper(object):
             else:
                 post_date = ''
             meta['date'] = post_date
+            meta['tagline'] = movie.get('moviesite', '')
             
             extras = self.extras.get(meta['title'], {})
             meta['movie_id'] = extras.get('id', '')
             meta['plot'] = meta['plotoutline'] = extras.get('plot', '')
             if 'duration' in extras and extras['duration']: meta['duration'] = extras['duration']
-            log_utils.log('meta: %s - %s' % (meta['title'], meta['date']))
+            log_utils.log('meta: %s' % (meta))
             yield meta
             
     def get_trailers(self, location, movie_id):
@@ -200,7 +202,7 @@ class Scraper(object):
     def __parse_date(self, date_str):
         if date_str:
             d = parsedate_tz(date_str)
-            return '%02d-%02d-%04d' % (d[2], d[1], d[0])
+            return '%02d.%02d.%04d' % (d[2], d[1], d[0])
         else:
             return ''
     
