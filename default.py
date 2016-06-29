@@ -18,6 +18,8 @@
 import sys
 import xbmcplugin
 import xbmcgui
+import xbmcvfs
+import os
 from lib import kodi
 from lib.kodi import i18n
 from lib import trailer_scraper
@@ -81,12 +83,20 @@ def get_movies(source, limit):
 
 @url_dispatcher.register(MODES.TRAILERS, ['location'], ['movie_id', 'poster', 'fanart'])
 def show_trailers(location, movie_id='', poster='', fanart=''):
+    path = kodi.get_setting('download_path')
     for trailer in scraper.get_trailers(location, movie_id):
         trailer['fanart'] = fanart
         trailer['poster'] = poster
         stream_url = utils.get_best_stream(trailer['streams'], 'stream')
         download_url = utils.get_best_stream(trailer['streams'], 'download')
         label = trailer['title']
+        if path:
+            file_name = utils.create_legal_filename(trailer['title'], trailer.get('year', ''))
+            if utils.trailer_exists(path, file_name):
+                label += ' [I](%s)[/I]' % (i18n('downloaded'))
+        else:
+            file_name = ''
+            
         liz = utils.make_list_item(label, trailer)
         liz.setProperty('isPlayable', 'true')
         del trailer['streams']
@@ -98,15 +108,22 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
         menu_items.append(('Download Trailer', runstring),)
         liz.addContextMenuItems(menu_items, replaceItems=False)
         
-        queries = {'mode': MODES.PLAY_TRAILER, 'trailer_url': stream_url, 'thumb': trailer.get('thumb', '')}
+        queries = {'mode': MODES.PLAY_TRAILER, 'trailer_url': stream_url, 'thumb': trailer.get('thumb', ''), 'trailer_file': file_name}
         liz_url = kodi.get_plugin_url(queries)
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), liz_url, liz, isFolder=False)
     utils.set_view('movies', set_view=True)
     kodi.end_of_directory()
 
-@url_dispatcher.register(MODES.PLAY_TRAILER, ['trailer_url'], ['thumb'])
-def play_trailer(trailer_url, thumb=''):
-    trailer_url += '|User-Agent=%s' % (BROWSER_UA)
+@url_dispatcher.register(MODES.PLAY_TRAILER, ['trailer_url'], ['thumb', 'trailer_file'])
+def play_trailer(trailer_url, thumb='', trailer_file=''):
+    path = kodi.get_setting('download_path')
+    if path and trailer_file:
+        local_file = utils.trailer_exists(path, trailer_file)
+        if local_file:
+            trailer_url = os.path.join(path, local_file)
+    else:
+        trailer_url += '|User-Agent=%s' % (BROWSER_UA)
+        
     listitem = xbmcgui.ListItem(path=trailer_url, iconImage=thumb, thumbnailImage=thumb)
     try: listitem.setArt({'thumb': thumb})
     except: pass

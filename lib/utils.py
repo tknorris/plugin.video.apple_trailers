@@ -168,12 +168,19 @@ def get_extension(url, response):
 
 def create_legal_filename(title, year):
     if year: title = '%s (%s)' % (title, year)
-    filename = '%s.m4v' % title
+    filename = '%s.m4v' % (title)
     filename = re.sub(r'(?!%s)[^\w\-_\.]', '.', filename)
     filename = re.sub('\.+', '.', filename)
     xbmc.makeLegalFilename(filename)
     return filename
 
+def trailer_exists(path, file_name):
+    file_name = file_name[:-4]
+    for f in xbmcvfs.listdir(path)[1]:
+        if f.startswith(file_name):
+            return f
+
+    return False
 
 def url2name(url):
     return os.path.basename(urllib.unquote(urlparse.urlsplit(url)[2]))

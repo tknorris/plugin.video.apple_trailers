@@ -37,5 +37,6 @@ STRINGS = {
     'no_lists_for_user': 30017,
     'no_movie_found': 30018,
     'pick_a_movie': 30019,
-    'added_to_list': 30020
+    'added_to_list': 30020,
+    'downloaded': 30021
 }

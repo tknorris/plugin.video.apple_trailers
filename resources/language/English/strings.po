@@ -97,6 +97,10 @@ msgctxt "#30020"
 msgid "%s added to %s"
 msgstr ""
 
+msgctxt "#30021"
+msgid "Downloaded"
+msgstr ""
+
 msgctxt "#30500"
 msgid "Trailer Source"
 msgstr ""
