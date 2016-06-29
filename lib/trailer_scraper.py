@@ -200,7 +200,7 @@ class Scraper(object):
     def __parse_date(self, date_str):
         if date_str:
             d = parsedate_tz(date_str)
-            return '%02d-%02d-%04d' % (d[1], d[2], d[0])
+            return '%02d-%02d-%04d' % (d[2], d[1], d[0])
         else:
             return ''
     
