@@ -45,7 +45,7 @@ TRAILER_SOURCES = [scraper.get_all_movies, scraper.get_exclusive_movies, scraper
 CP_ADD_URL = 'plugin://plugin.video.couchpotato_manager/movies/add?title=%s'
 
 @url_dispatcher.register(MODES.MAIN)
-def main_menu():
+def show_movies():
     try: limit = int(kodi.get_setting('limit'))
     except: limit = 0
     try: source = int(kodi.get_setting('source'))

@@ -68,11 +68,11 @@ class Scraper(object):
             if limit and i >= limit: break
             meta = {}
             meta['mediatype'] = 'movie'
-            meta['title'] = movie['title']
+            meta['title'] = meta['originaltitle'] = movie['title']
             premiered = self.__parse_date(movie.get('releasedate'))
             if premiered:
-                meta['premiered'] = meta['aired'] = premiered
-                meta['year'] = meta['premiered'][:4]
+                meta['premiered'] = premiered
+                meta['year'] = meta['premiered'][-4:]
             meta['poster'] = self.__make_poster(movie['poster'])
             meta['fanart'] = self.__make_background(movie['poster'])
             meta['studio'] = movie.get('studio', '')
@@ -81,11 +81,17 @@ class Scraper(object):
             meta['genre'] = ', '.join(movie.get('genre', []))
             meta['cast'] = movie.get('actors', [])
             meta['location'] = movie.get('location', '')
+            if 'trailers' in movie and movie['trailers']:
+                post_date = max([self.__parse_date(trailer['postdate']) for trailer in movie['trailers']])
+            else:
+                post_date = ''
+            meta['date'] = post_date
             
             extras = self.extras.get(meta['title'], {})
             meta['movie_id'] = extras.get('id', '')
             meta['plot'] = meta['plotoutline'] = extras.get('plot', '')
             if 'duration' in extras and extras['duration']: meta['duration'] = extras['duration']
+            log_utils.log('meta: %s - %s' % (meta['title'], meta['date']))
             yield meta
             
     def get_trailers(self, location, movie_id):
@@ -146,7 +152,7 @@ class Scraper(object):
         release_date = page.get('release_date', '')
         if release_date:
             meta['premiered'] = release_date
-            meta['year'] = release_date[:4]
+            meta['year'] = release_date[-4:]
         return meta
     
     def __get_details(self, details):
@@ -194,7 +200,7 @@ class Scraper(object):
     def __parse_date(self, date_str):
         if date_str:
             d = parsedate_tz(date_str)
-            return '%04d-%02d-%02d' % (d[0], d[1], d[2])
+            return '%02d-%02d-%04d' % (d[1], d[2], d[0])
         else:
             return ''
     
