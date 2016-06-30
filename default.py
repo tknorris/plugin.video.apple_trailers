@@ -18,7 +18,6 @@
 import sys
 import xbmcplugin
 import xbmcgui
-import xbmcvfs
 import os
 from lib import kodi
 from lib.kodi import i18n
