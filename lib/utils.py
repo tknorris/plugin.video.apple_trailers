@@ -42,7 +42,7 @@ INTERVALS = 5
 Q_ORDER = {'sd': 1, 'hd720': 2, 'hd1080': 3}
 PROGRESS = __enum(OFF=0, WINDOW=1, BACKGROUND=2)
 CHUNK_SIZE = 512 * 1024
-DEFAULT_EXT = '.mpg'
+DEFAULT_EXT = 'mpg'
 TRAKT_SORT = __enum(TITLE='title', ACTIVITY='activity', MOST_COMPLETED='most-completed', LEAST_COMPLETED='least-completed', RECENTLY_AIRED='recently-aired',
                     PREVIOUSLY_AIRED='previously-aired')
 TRAKT_LIST_SORT = __enum(RANK='rank', RECENTLY_ADDED='added', TITLE='title', RELEASE_DATE='released', RUNTIME='runtime', POPULARITY='popularity',
@@ -107,7 +107,7 @@ def download_media(url, path, file_name):
             else:
                 content_length = 0
     
-            file_name = re.sub('.m4v$', get_extension(url, response), file_name)
+            file_name += '.' + get_extension(url, response)
             full_path = os.path.join(path, file_name)
             log_utils.log('Downloading: %s -> %s' % (url, full_path), log_utils.LOGDEBUG)
     
@@ -162,20 +162,19 @@ def get_extension(url, response):
                 filename = filename[1:-1]
     elif response.url != url:
         filename = url2name(response.url)
-    ext = os.path.splitext(filename)[1]
+    ext = os.path.splitext(filename)[1][1:]
     if not ext: ext = DEFAULT_EXT
     return ext
 
 def create_legal_filename(title, year):
-    if year: title = '%s (%s)' % (title, year)
-    filename = '%s.m4v' % (title)
+    filename = title
+    if year: filename += ' %s' % (year)
     filename = re.sub(r'(?!%s)[^\w\-_\.]', '.', filename)
     filename = re.sub('\.+', '.', filename)
     xbmc.makeLegalFilename(filename)
     return filename
 
 def trailer_exists(path, file_name):
-    file_name = file_name[:-4]
     for f in xbmcvfs.listdir(path)[1]:
         if f.startswith(file_name):
             return f
