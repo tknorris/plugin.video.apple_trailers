@@ -161,6 +161,7 @@ def add_trakt(title, year=''):
         
     if index > -1:
         slug = kodi.get_setting('default_slug')
+        name = kodi.get_setting('default_list')
         if not slug:
             result = utils.choose_list()
             if result is None:
@@ -171,7 +172,6 @@ def add_trakt(title, year=''):
         item = {'trakt': results[index]['ids']['trakt']}
         if slug == WATCHLIST_SLUG:
             trakt_api.add_to_watchlist(SECTIONS.MOVIES, item)
-            name = 'Watchlist'
         elif slug:
             trakt_api.add_to_list(SECTIONS.MOVIES, slug, item)
             
