@@ -30,7 +30,7 @@ import xbmcplugin
 import xbmcvfs
 import kodi
 import log_utils
-from trakt_api import Trakt_API
+from trakt_api import Trakt_API, TransientTraktError, TraktAuthError
 from kodi import i18n
 from trailer_scraper import BROWSER_UA
 from trakt_api import SECTIONS
@@ -306,11 +306,17 @@ def make_list_dict():
     token = kodi.get_setting('trakt_oauth_token')
     list_data = {}
     if token and slug:
-        trakt_api = Trakt_API(token, kodi.get_setting('use_https') == 'true', timeout=int(kodi.get_setting('trakt_timeout')))
-        if slug == WATCHLIST_SLUG:
-            trakt_list = trakt_api.show_watchlist(SECTIONS.MOVIES)
-        else:
-            trakt_list = trakt_api.show_list(slug, SECTIONS.MOVIES)
+        try:
+            trakt_api = Trakt_API(token, kodi.get_setting('use_https') == 'true', timeout=int(kodi.get_setting('trakt_timeout')))
+            if slug == WATCHLIST_SLUG:
+                trakt_list = trakt_api.show_watchlist(SECTIONS.MOVIES)
+            else:
+                trakt_list = trakt_api.show_list(slug, SECTIONS.MOVIES)
+        except (TransientTraktError, TraktAuthError) as e:
+            log_utils.log(str(e), log_utils.LOGERROR)
+            kodi.notify(msg=str(e), duration=5000)
+            trakt_list = []
+                
         for movie in trakt_list:
             key = movie['title'].upper()
             list_data[key] = list_data.get(key, set())
