@@ -1,3 +1,6 @@
+[B]Version 0.0.7[/B]
+- Fail gracefully when trakt API is down.
+
 [B]Version 0.0.6[/B]
 - Fix list name handling
 
