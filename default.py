@@ -42,7 +42,8 @@ MODES = __enum(
 
 url_dispatcher = URL_Dispatcher()
 scraper = trailer_scraper.Scraper()
-i18n = kodi.Translations(strings.STRINGS).i18n
+translations = kodi.Translations(strings.STRINGS)
+i18n = translations.i18n
 
 TRAILER_SOURCES = [scraper.get_all_movies, scraper.get_exclusive_movies, scraper.get_most_popular_movies, scraper.get_most_recent_movies]
 CP_ADD_URL = 'plugin://plugin.video.couchpotato_manager/movies/add?title=%s'
@@ -92,7 +93,7 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
         download_url = local_utils.get_best_stream(trailer['streams'], 'download')
         label = trailer['title']
         if path:
-            file_name = local_utils.create_legal_filename(trailer['title'], trailer.get('year', ''))
+            file_name = utils.create_legal_filename(trailer['title'], trailer.get('year', ''))
             if local_utils.trailer_exists(path, file_name):
                 label += ' [I](%s)[/I]' % (i18n('downloaded'))
         else:
@@ -142,8 +143,8 @@ def download_trailer(trailer_url, title, year=''):
         kodi.show_settings()
         path = kodi.get_setting('download_path')
         
-    file_name = local_utils.create_legal_filename(title, year)
-    local_utils.download_media(trailer_url, path, file_name)
+    file_name = utils.create_legal_filename(title, year)
+    utils.download_media(trailer_url, path, file_name, translations)
 
 @url_dispatcher.register(MODES.ADD_TRAKT, ['title'], ['year'])
 def add_trakt(title, year=''):
@@ -165,7 +166,7 @@ def add_trakt(title, year=''):
         slug = kodi.get_setting('default_slug')
         name = kodi.get_setting('default_list')
         if not slug:
-            result = local_utils.choose_list()
+            result = utils.choose_list(Trakt_API, translations)
             if result is None:
                 return
             else:
@@ -184,11 +185,11 @@ def add_trakt(title, year=''):
 
 @url_dispatcher.register(MODES.AUTH_TRAKT)
 def auth_trakt():
-    local_utils.auth_trakt()
+    utils.auth_trakt(Trakt_API, translations)
  
 @url_dispatcher.register(MODES.SET_LIST)
 def set_list():
-    result = local_utils.choose_list()
+    result = utils.choose_list(Trakt_API, translations)
     if result is not None:
         slug, name = result
         kodi.set_setting('default_list', name)

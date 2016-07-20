@@ -15,38 +15,22 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import re
-import os
-import urllib2
-import urllib
-import urlparse
-import time
-import xbmcgui
-import xbmc
 import xbmcvfs
 import kodi
 import log_utils
-import strings
 from trakt_api import Trakt_API, TransientTraktError, TraktAuthError
-from trailer_scraper import BROWSER_UA
 from trakt_api import SECTIONS
 
 def __enum(**enums):
     return type('Enum', (), enums)
 
-INTERVALS = 5
 Q_ORDER = {'sd': 1, 'hd720': 2, 'hd1080': 3}
-PROGRESS = __enum(OFF=0, WINDOW=1, BACKGROUND=2)
-CHUNK_SIZE = 512 * 1024
-DEFAULT_EXT = 'mpg'
 TRAKT_SORT = __enum(TITLE='title', ACTIVITY='activity', MOST_COMPLETED='most-completed', LEAST_COMPLETED='least-completed', RECENTLY_AIRED='recently-aired',
                     PREVIOUSLY_AIRED='previously-aired')
 TRAKT_LIST_SORT = __enum(RANK='rank', RECENTLY_ADDED='added', TITLE='title', RELEASE_DATE='released', RUNTIME='runtime', POPULARITY='popularity',
                          PERCENTAGE='percentage', VOTES='votes')
 TRAKT_SORT_DIR = __enum(ASCENDING='asc', DESCENDING='desc')
 WATCHLIST_SLUG = 'watchlist_slug'
-
-i18n = kodi.Translations(strings.STRINGS).i18n
 
 def make_art(meta):
     art_dict = {'banner': '', 'fanart': '', 'thumb': '', 'poster': ''}
@@ -55,101 +39,12 @@ def make_art(meta):
     if 'thumb' in meta: art_dict['thumb'] = meta['thumb']
     return art_dict
 
-def download_media(url, path, file_name):
-    try:
-        progress = int(kodi.get_setting('down_progress'))
-        active = not progress == PROGRESS.OFF
-        background = progress == PROGRESS.BACKGROUND
-        with kodi.ProgressDialog(kodi.get_name(), i18n('downloading') % (file_name), background=background, active=active) as pd:
-            try:
-                headers = dict([item.split('=') for item in (url.split('|')[1]).split('&')])
-                for key in headers: headers[key] = urllib.unquote(headers[key])
-            except:
-                headers = {}
-            if 'User-Agent' not in headers: headers['User-Agent'] = BROWSER_UA
-            request = urllib2.Request(url.split('|')[0], headers=headers)
-            response = urllib2.urlopen(request)
-            if 'Content-Length' in response.info():
-                content_length = int(response.info()['Content-Length'])
-            else:
-                content_length = 0
-    
-            file_name += '.' + get_extension(url, response)
-            full_path = os.path.join(path, file_name)
-            log_utils.log('Downloading: %s -> %s' % (url, full_path), log_utils.LOGDEBUG)
-    
-            path = xbmc.makeLegalFilename(path)
-            try:
-                try: xbmcvfs.mkdirs(path)
-                except: os.makedirs(path)
-            except Exception as e:
-                log_utils.log('Path Create Failed: %s (%s)' % (e, path), log_utils.LOGDEBUG)
-    
-            if not path.endswith(os.sep): path += os.sep
-            if not xbmcvfs.exists(path):
-                raise Exception(i18n('failed_create_dir'))
-            
-            file_desc = xbmcvfs.File(full_path, 'w')
-            total_len = 0
-            cancel = False
-            while True:
-                data = response.read(CHUNK_SIZE)
-                if not data:
-                    break
-    
-                if pd.is_canceled():
-                    cancel = True
-                    break
-    
-                total_len += len(data)
-                if not file_desc.write(data):
-                    raise Exception(i18n('failed_write_file'))
-    
-                percent_progress = (total_len) * 100 / content_length if content_length > 0 else 0
-                log_utils.log('Position : %s / %s = %s%%' % (total_len, content_length, percent_progress), log_utils.LOGDEBUG)
-                pd.update(percent_progress)
-            
-            file_desc.close()
-
-        if not cancel:
-            kodi.notify(msg=i18n('download_complete') % (file_name), duration=5000)
-            log_utils.log('Download Complete: %s -> %s' % (url, full_path), log_utils.LOGDEBUG)
-
-    except Exception as e:
-        log_utils.log('Error (%s) during download: %s -> %s' % (str(e), url, file_name), log_utils.LOGERROR)
-        kodi.notify(msg=i18n('download_error') % (str(e), file_name), duration=5000)
-
-def get_extension(url, response):
-    filename = url2name(url)
-    if 'Content-Disposition' in response.info():
-        cd_list = response.info()['Content-Disposition'].split('filename=')
-        if len(cd_list) > 1:
-            filename = cd_list[-1]
-            if filename[0] == '"' or filename[0] == "'":
-                filename = filename[1:-1]
-    elif response.url != url:
-        filename = url2name(response.url)
-    ext = os.path.splitext(filename)[1][1:]
-    if not ext: ext = DEFAULT_EXT
-    return ext
-
-def create_legal_filename(title, year):
-    filename = title
-    if year: filename += ' %s' % (year)
-    filename = re.sub(r'(?!%s)[^\w\-_\.]', '.', filename)
-    filename = re.sub('\.+', '.', filename)
-    xbmc.makeLegalFilename(filename)
-    return filename
-
 def trailer_exists(path, file_name):
     for f in xbmcvfs.listdir(path)[1]:
         if f.startswith(file_name):
             return f
 
     return False
-
-def url2name(url):
-    return os.path.basename(urllib.unquote(urlparse.urlsplit(url)[2]))
 
 def get_best_stream(streams, method='stream'):
     setting = 'trailer_%s_quality' % (method)
@@ -161,53 +56,6 @@ def get_best_stream(streams, method='stream'):
             best_quality = Q_ORDER[stream]
             best_stream = streams[stream]
     return best_stream
-
-def auth_trakt():
-    start = time.time()
-    use_https = kodi.get_setting('use_https') == 'true'
-    trakt_timeout = int(kodi.get_setting('trakt_timeout'))
-    trakt_api = Trakt_API(use_https=use_https, timeout=trakt_timeout)
-    result = trakt_api.get_code()
-    code, expires, interval = result['device_code'], result['expires_in'], result['interval']
-    time_left = expires - int(time.time() - start)
-    line1 = i18n('verification_url') % (result['verification_url'])
-    line2 = i18n('prompt_code') % (result['user_code'])
-    line3 = i18n('code_expires') % (time_left)
-    with kodi.ProgressDialog(i18n('trakt_acct_auth'), line1=line1, line2=line2, line3=line3) as pd:
-        pd.update(100)
-        while time_left:
-            for _ in range(INTERVALS):
-                kodi.sleep(interval * 1000 / INTERVALS)
-                if pd.is_canceled(): return
-
-            try:
-                result = trakt_api.get_device_token(code)
-                break
-            except urllib2.URLError as e:
-                # authorization is pending; too fast
-                if e.code in [400, 429]:
-                    pass
-                elif e.code == 418:
-                    kodi.notify(msg=i18n('user_reject_auth'), duration=3000)
-                    return
-                elif e.code == 410:
-                    break
-                else:
-                    raise
-                
-            time_left = expires - int(time.time() - start)
-            progress = time_left * 100 / expires
-            pd.update(progress, line3=i18n('code_expires') % (time_left))
-        
-    try:
-        kodi.set_setting('trakt_oauth_token', result['access_token'])
-        kodi.set_setting('trakt_refresh_token', result['refresh_token'])
-        trakt_api = Trakt_API(result['access_token'], use_https=use_https, timeout=trakt_timeout)
-        profile = trakt_api.get_user_profile(cached=False)
-        kodi.set_setting('trakt_user', '%s (%s)' % (profile['username'], profile['name']))
-        kodi.notify(msg=i18n('trakt_auth_complete'), duration=3000)
-    except Exception as e:
-        log_utils.log('Trakt Authorization Failed: %s' % (e), log_utils.LOGDEBUG)
 
 def make_list_dict():
     slug = kodi.get_setting('default_slug')
@@ -233,15 +81,3 @@ def make_list_dict():
                 list_data[key].update(new_set)
     log_utils.log('List Dict: %s: %s' % (slug, list_data))
     return list_data
-
-def choose_list(username=None):
-    trakt_api = Trakt_API(kodi.get_setting('trakt_oauth_token'), kodi.get_setting('use_https') == 'true', timeout=int(kodi.get_setting('trakt_timeout')))
-    lists = trakt_api.get_lists(username)
-    if username is None: lists.insert(0, {'name': 'watchlist', 'ids': {'slug': WATCHLIST_SLUG}})
-    if lists:
-        dialog = xbmcgui.Dialog()
-        index = dialog.select(i18n('pick_a_list'), [list_data['name'] for list_data in lists])
-        if index > -1:
-            return (lists[index]['ids']['slug'], lists[index]['name'])
-    else:
-        kodi.notify(msg=i18n('no_lists_for_user') % (username), duration=5000)
