@@ -74,7 +74,7 @@ def show_movies():
         queries = {'mode': MODES.TRAILERS, 'movie_id': movie['movie_id'], 'location': movie['location'], 'poster': movie.get('poster', ''), 'fanart': movie.get('fanart', '')}
         liz_url = kodi.get_plugin_url(queries)
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), liz_url, liz, isFolder=True)
-    utils.set_view('movies', set_sort=True)
+    kodi.set_view('movies', set_sort=True)
     kodi.end_of_directory(cache_to_disc=False)
 
 @cache.cache_function(cache_limit=8)
@@ -111,7 +111,7 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
         queries = {'mode': MODES.PLAY_TRAILER, 'trailer_url': stream_url, 'thumb': trailer.get('thumb', ''), 'trailer_file': file_name}
         liz_url = kodi.get_plugin_url(queries)
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), liz_url, liz, isFolder=False)
-    utils.set_view('movies', set_view=True)
+    kodi.set_view('movies', set_view=True)
     kodi.end_of_directory()
 
 @url_dispatcher.register(MODES.PLAY_TRAILER, ['trailer_url'], ['thumb', 'trailer_file'])

@@ -67,27 +67,6 @@ def make_art(meta):
     if 'thumb' in meta: art_dict['thumb'] = meta['thumb']
     return art_dict
 
-def set_view(content, set_view=False, set_sort=False):
-    # set content type so library shows more views and info
-    if content:
-        kodi.set_content(content)
-
-    if set_view:
-        view = kodi.get_setting('%s_view' % (content))
-        if view and view != '0':
-            log_utils.log('Setting View to %s (%s)' % (view, content), log_utils.LOGDEBUG)
-            xbmc.executebuiltin('Container.SetViewMode(%s)' % (view))
-
-    # set sort methods - probably we don't need all of them
-    if set_sort:
-        xbmcplugin.addSortMethod(handle=int(sys.argv[1]), sortMethod=xbmcplugin.SORT_METHOD_UNSORTED)
-        xbmcplugin.addSortMethod(handle=int(sys.argv[1]), sortMethod=xbmcplugin.SORT_METHOD_VIDEO_SORT_TITLE_IGNORE_THE)
-        xbmcplugin.addSortMethod(handle=int(sys.argv[1]), sortMethod=xbmcplugin.SORT_METHOD_VIDEO_YEAR)
-        xbmcplugin.addSortMethod(handle=int(sys.argv[1]), sortMethod=xbmcplugin.SORT_METHOD_MPAA_RATING)
-        xbmcplugin.addSortMethod(handle=int(sys.argv[1]), sortMethod=xbmcplugin.SORT_METHOD_DATE)
-        xbmcplugin.addSortMethod(handle=int(sys.argv[1]), sortMethod=xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
-        xbmcplugin.addSortMethod(handle=int(sys.argv[1]), sortMethod=xbmcplugin.SORT_METHOD_GENRE)
-
 def download_media(url, path, file_name):
     try:
         progress = int(kodi.get_setting('down_progress'))
