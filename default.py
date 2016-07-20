@@ -22,13 +22,14 @@ import os
 import kodi
 import cache
 import log_utils
+import utils
 from url_dispatcher import URL_Dispatcher
 from lib import trailer_scraper
-from lib import utils
+from lib import local_utils
 from lib.trailer_scraper import BROWSER_UA
 from lib.trakt_api import Trakt_API, TransientTraktError, TraktError, TraktAuthError
 from lib.trakt_api import SECTIONS
-from lib.utils import WATCHLIST_SLUG
+from lib.local_utils import WATCHLIST_SLUG
 from lib import strings
 
 def __enum(**enums):
@@ -52,7 +53,7 @@ def show_movies():
     except: limit = 0
     try: source = int(kodi.get_setting('source'))
     except: source = 0
-    list_data = utils.make_list_dict()
+    list_data = local_utils.make_list_dict()
     for movie in get_movies(source, limit):
         label = movie['title']
         key = movie['title'].upper()
@@ -60,7 +61,7 @@ def show_movies():
             if 'year' not in movie or not movie['year'] or not list_data[key] or int(movie['year']) in list_data[key]:
                 label = '[COLOR green]%s[/COLOR]' % (label)
         
-        liz = utils.make_list_item(label, movie)
+        liz = utils.make_list_item(label, movie, local_utils.make_art)
         liz.setInfo('video', movie)
         
         menu_items = []
@@ -87,17 +88,17 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
     for trailer in scraper.get_trailers(location, movie_id):
         trailer['fanart'] = fanart
         trailer['poster'] = poster
-        stream_url = utils.get_best_stream(trailer['streams'], 'stream')
-        download_url = utils.get_best_stream(trailer['streams'], 'download')
+        stream_url = local_utils.get_best_stream(trailer['streams'], 'stream')
+        download_url = local_utils.get_best_stream(trailer['streams'], 'download')
         label = trailer['title']
         if path:
-            file_name = utils.create_legal_filename(trailer['title'], trailer.get('year', ''))
-            if utils.trailer_exists(path, file_name):
+            file_name = local_utils.create_legal_filename(trailer['title'], trailer.get('year', ''))
+            if local_utils.trailer_exists(path, file_name):
                 label += ' [I](%s)[/I]' % (i18n('downloaded'))
         else:
             file_name = ''
             
-        liz = utils.make_list_item(label, trailer)
+        liz = utils.make_list_item(label, trailer, local_utils.make_art)
         liz.setProperty('isPlayable', 'true')
         del trailer['streams']
         liz.setInfo('video', trailer)
@@ -118,7 +119,7 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
 def play_trailer(trailer_url, thumb='', trailer_file=''):
     path = kodi.get_setting('download_path')
     if path and trailer_file:
-        local_file = utils.trailer_exists(path, trailer_file)
+        local_file = local_utils.trailer_exists(path, trailer_file)
         if local_file:
             trailer_url = os.path.join(path, local_file)
     else:
@@ -141,8 +142,8 @@ def download_trailer(trailer_url, title, year=''):
         kodi.show_settings()
         path = kodi.get_setting('download_path')
         
-    file_name = utils.create_legal_filename(title, year)
-    utils.download_media(trailer_url, path, file_name)
+    file_name = local_utils.create_legal_filename(title, year)
+    local_utils.download_media(trailer_url, path, file_name)
 
 @url_dispatcher.register(MODES.ADD_TRAKT, ['title'], ['year'])
 def add_trakt(title, year=''):
@@ -164,7 +165,7 @@ def add_trakt(title, year=''):
         slug = kodi.get_setting('default_slug')
         name = kodi.get_setting('default_list')
         if not slug:
-            result = utils.choose_list()
+            result = local_utils.choose_list()
             if result is None:
                 return
             else:
@@ -183,11 +184,11 @@ def add_trakt(title, year=''):
 
 @url_dispatcher.register(MODES.AUTH_TRAKT)
 def auth_trakt():
-    utils.auth_trakt()
+    local_utils.auth_trakt()
  
 @url_dispatcher.register(MODES.SET_LIST)
 def set_list():
-    result = utils.choose_list()
+    result = local_utils.choose_list()
     if result is not None:
         slug, name = result
         kodi.set_setting('default_list', name)

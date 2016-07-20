@@ -16,22 +16,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import re
-import sys
 import os
 import urllib2
 import urllib
 import urlparse
-import datetime
 import time
-import json
 import xbmcgui
 import xbmc
-import xbmcplugin
 import xbmcvfs
 import kodi
 import log_utils
+import strings
 from trakt_api import Trakt_API, TransientTraktError, TraktAuthError
-from kodi import i18n
 from trailer_scraper import BROWSER_UA
 from trakt_api import SECTIONS
 
@@ -50,15 +46,7 @@ TRAKT_LIST_SORT = __enum(RANK='rank', RECENTLY_ADDED='added', TITLE='title', REL
 TRAKT_SORT_DIR = __enum(ASCENDING='asc', DESCENDING='desc')
 WATCHLIST_SLUG = 'watchlist_slug'
 
-
-def make_list_item(label, meta):
-    art = make_art(meta)
-    listitem = xbmcgui.ListItem(label, iconImage=art['thumb'], thumbnailImage=art['thumb'])
-    listitem.setProperty('fanart_image', art['fanart'])
-    listitem.addStreamInfo('video', {})
-    try: listitem.setArt(art)
-    except: pass
-    return listitem
+i18n = kodi.Translations(strings.STRINGS).i18n
 
 def make_art(meta):
     art_dict = {'banner': '', 'fanart': '', 'thumb': '', 'poster': ''}
@@ -173,65 +161,6 @@ def get_best_stream(streams, method='stream'):
             best_quality = Q_ORDER[stream]
             best_stream = streams[stream]
     return best_stream
-
-def to_slug(username):
-    username = username.strip()
-    username = username.lower()
-    username = re.sub('[^a-z0-9_]', '-', username)
-    username = re.sub('--+', '-', username)
-    return username
-
-def iso_2_utc(iso_ts):
-    if not iso_ts or iso_ts is None: return 0
-    delim = -1
-    if not iso_ts.endswith('Z'):
-        delim = iso_ts.rfind('+')
-        if delim == -1: delim = iso_ts.rfind('-')
-
-    if delim > -1:
-        ts = iso_ts[:delim]
-        sign = iso_ts[delim]
-        tz = iso_ts[delim + 1:]
-    else:
-        ts = iso_ts
-        tz = None
-
-    if ts.find('.') > -1:
-        ts = ts[:ts.find('.')]
-
-    try: d = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
-    except TypeError: d = datetime.datetime(*(time.strptime(ts, '%Y-%m-%dT%H:%M:%S')[0:6]))
-
-    dif = datetime.timedelta()
-    if tz:
-        hours, minutes = tz.split(':')
-        hours = int(hours)
-        minutes = int(minutes)
-        if sign == '-':
-            hours = -hours
-            minutes = -minutes
-        dif = datetime.timedelta(minutes=minutes, hours=hours)
-    utc_dt = d - dif
-    epoch = datetime.datetime.utcfromtimestamp(0)
-    delta = utc_dt - epoch
-    try: seconds = delta.total_seconds()  # works only on 2.7
-    except: seconds = delta.seconds + delta.days * 24 * 3600  # close enough
-    return seconds
-
-def json_load_as_str(file_handle):
-    return _byteify(json.load(file_handle, object_hook=_byteify), ignore_dicts=True)
-
-def json_loads_as_str(json_text):
-    return _byteify(json.loads(json_text, object_hook=_byteify), ignore_dicts=True)
-
-def _byteify(data, ignore_dicts=False):
-    if isinstance(data, unicode):
-        return data.encode('utf-8')
-    if isinstance(data, list):
-        return [_byteify(item, ignore_dicts=True) for item in data]
-    if isinstance(data, dict) and not ignore_dicts:
-        return dict([(_byteify(key, ignore_dicts=True), _byteify(value, ignore_dicts=True)) for key, value in data.iteritems()])
-    return data
 
 def auth_trakt():
     start = time.time()
