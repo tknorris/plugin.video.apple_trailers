@@ -62,7 +62,7 @@ def show_movies():
             if 'year' not in movie or not movie['year'] or not list_data[key] or int(movie['year']) in list_data[key]:
                 label = '[COLOR green]%s[/COLOR]' % (label)
         
-        liz = utils.make_list_item(label, movie, local_utils.make_art)
+        liz = utils.make_list_item(label, movie, local_utils.make_art(movie))
         liz.setInfo('video', movie)
         
         menu_items = []
@@ -99,7 +99,7 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
         else:
             file_name = ''
             
-        liz = utils.make_list_item(label, trailer, local_utils.make_art)
+        liz = utils.make_list_item(label, trailer, local_utils.make_art(trailer))
         liz.setProperty('isPlayable', 'true')
         del trailer['streams']
         liz.setInfo('video', trailer)

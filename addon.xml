@@ -3,7 +3,7 @@
 <addon id="plugin.video.apple_trailers" version="0.0.8" name="Apple Trailers" provider-name="tknorris">
     <requires>
         <import addon="xbmc.python" version="2.1.0"/>
-        <import addon="script.module.tknorris.shared" version="0.0.1"/>
+        <import addon="script.module.tknorris.shared" version="0.0.10"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="default.py">
         <provides>video</provides>
