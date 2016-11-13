@@ -173,6 +173,7 @@ def download_trailer(trailer_url, title, year=''):
         kodi.show_settings()
         path = kodi.get_setting('download_path')
         
+    trailer_url = local_utils.resolve_trailer(trailer_url)
     file_name = utils.create_legal_filename(title, year)
     utils.download_media(trailer_url, path, file_name, translations)
 
