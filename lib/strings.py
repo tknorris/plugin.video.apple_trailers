@@ -38,5 +38,8 @@ STRINGS = {
     'no_movie_found': 30018,
     'pick_a_movie': 30019,
     'added_to_list': 30020,
-    'downloaded': 30021
+    'downloaded': 30021,
+    'play_most_recent': 30022,
+    'none_available': 30023,
+    'download_trailer': 30024
 }

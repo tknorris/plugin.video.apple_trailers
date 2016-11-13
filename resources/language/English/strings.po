@@ -101,6 +101,18 @@ msgctxt "#30021"
 msgid "Downloaded"
 msgstr ""
 
+msgctxt "#30022"
+msgid "Play Most Recent Trailer"
+msgstr ""
+
+msgctxt "#30023"
+msgid "No Trailers Available"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Download Trailer"
+msgstr ""
+
 msgctxt "#30500"
 msgid "Trailer Source"
 msgstr ""

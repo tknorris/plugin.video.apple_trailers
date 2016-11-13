@@ -18,6 +18,7 @@
 import sys
 import xbmcplugin
 import xbmcgui
+import xbmc
 import os
 import kodi
 import cache
@@ -37,7 +38,7 @@ def __enum(**enums):
 
 MODES = __enum(
     MAIN='main', TRAILERS='trailers', PLAY_TRAILER='play_trailer', DOWNLOAD_TRAILER='download_trailer', AUTH_TRAKT='auth_trakt', SET_LIST='set_list',
-    ADD_TRAKT='add_trakt'
+    ADD_TRAKT='add_trakt', PLAY_RECENT='play_recent'
 )
 
 url_dispatcher = URL_Dispatcher()
@@ -66,11 +67,14 @@ def show_movies():
         liz.setInfo('video', movie)
         
         menu_items = []
-        runstring = 'RunPlugin(%s)' % (CP_ADD_URL % (movie['title']))
-        menu_items.append((i18n('add_to_cp'), runstring),)
+        queries = {'mode': MODES.PLAY_RECENT, 'movie_id': movie['movie_id'], 'location': movie['location'], 'thumb': movie.get('poster', '')}
+        runstring = 'RunPlugin(%s)' % (kodi.get_plugin_url(queries))
+        menu_items.append((i18n('play_most_recent'), runstring),)
         queries = {'mode': MODES.ADD_TRAKT, 'title': movie['title'], 'year': movie.get('year', '')}
         runstring = 'RunPlugin(%s)' % (kodi.get_plugin_url(queries))
         menu_items.append((i18n('add_to_trakt'), runstring),)
+        runstring = 'RunPlugin(%s)' % (CP_ADD_URL % (movie['title']))
+        menu_items.append((i18n('add_to_cp'), runstring),)
         liz.addContextMenuItems(menu_items, replaceItems=False)
         
         queries = {'mode': MODES.TRAILERS, 'movie_id': movie['movie_id'], 'location': movie['location'], 'poster': movie.get('poster', ''), 'fanart': movie.get('fanart', '')}
@@ -107,7 +111,7 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
         menu_items = []
         queries = {'mode': MODES.DOWNLOAD_TRAILER, 'trailer_url': download_url, 'title': trailer['title'], 'year': trailer.get('year', '')}
         runstring = 'RunPlugin(%s)' % (kodi.get_plugin_url(queries))
-        menu_items.append(('Download Trailer', runstring),)
+        menu_items.append((i18n('download_trailer'), runstring),)
         liz.addContextMenuItems(menu_items, replaceItems=False)
         
         queries = {'mode': MODES.PLAY_TRAILER, 'trailer_url': stream_url, 'thumb': trailer.get('thumb', ''), 'trailer_file': file_name}
@@ -116,8 +120,26 @@ def show_trailers(location, movie_id='', poster='', fanart=''):
     kodi.set_view('movies', set_view=True)
     kodi.end_of_directory()
 
+@url_dispatcher.register(MODES.PLAY_RECENT, ['location'], ['movie_id', 'thumb'])
+def play_most_recent(location, movie_id='', thumb=''):
+    path = kodi.get_setting('download_path')
+    trailers = scraper.get_trailers(location, movie_id)
+    try:
+        trailer = trailers.next()
+        stream_url = local_utils.get_best_stream(trailer['streams'], 'stream')
+        if path:
+            file_name = utils.create_legal_filename(trailer['title'], trailer.get('year', ''))
+        else:
+            file_name = ''
+        
+        if not thumb: thumb = trailer.get('thumb', '')
+        play_trailer(stream_url, thumb, file_name, playable=False, meta=trailer)
+    except StopIteration:
+        kodi.notify(i18n('none_available'))
+
 @url_dispatcher.register(MODES.PLAY_TRAILER, ['trailer_url'], ['thumb', 'trailer_file'])
-def play_trailer(trailer_url, thumb='', trailer_file=''):
+def play_trailer(trailer_url, thumb='', trailer_file='', playable=True, meta=None):
+    if meta is None: meta = {}
     path = kodi.get_setting('download_path')
     if path and trailer_file:
         local_file = local_utils.trailer_exists(path, trailer_file)
@@ -127,10 +149,16 @@ def play_trailer(trailer_url, thumb='', trailer_file=''):
         trailer_url += '|User-Agent=%s' % (BROWSER_UA)
         
     listitem = xbmcgui.ListItem(path=trailer_url, iconImage=thumb, thumbnailImage=thumb)
+    if meta:
+        if 'streams' in meta: del meta['streams']
+        listitem.setInfo('video', meta)
     try: listitem.setArt({'thumb': thumb})
     except: pass
     listitem.setPath(trailer_url)
-    xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem)
+    if playable:
+        xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem)
+    else:
+        xbmc.Player().play(trailer_url, listitem=listitem)
     
 @url_dispatcher.register(MODES.DOWNLOAD_TRAILER, ['trailer_url', 'title'], ['year'])
 def download_trailer(trailer_url, title, year=''):
