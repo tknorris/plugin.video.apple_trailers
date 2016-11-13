@@ -180,7 +180,7 @@ class Scraper(object):
             sizes = clip['versions']['enus']['sizes']
             for key in sizes:
                 for source in SOURCES:
-                    if source in sizes[key]:
+                    if source in sizes[key] and sizes[key][source]:
                         streams[key] = sizes[key][source]
                         break
         return streams
