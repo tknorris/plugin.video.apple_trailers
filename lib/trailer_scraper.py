@@ -33,7 +33,7 @@ XML_URL = BASE_URL + '/home/xml/current.xml'
 USER_AGENT = 'iTunes'
 BROWSER_UA = 'Mozilla/5.0 (compatible, MSIE 11, Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko'
 XHR = {'X-Requested-With': 'XMLHttpRequest'}
-SOURCES = ['srcAlt', 'src']
+SOURCES = ['src', 'srcAlt']
 RATINGS = {'NOTYETRATED': 'Not Yet Rated', 'PG13': 'PG-13', 'NC17': 'NC-17'}
 CACHE_LIMITS = [24, 12, 8]
 

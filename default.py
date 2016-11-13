@@ -145,7 +145,9 @@ def play_trailer(trailer_url, thumb='', trailer_file='', playable=True, meta=Non
         local_file = local_utils.trailer_exists(path, trailer_file)
         if local_file:
             trailer_url = os.path.join(path, local_file)
-    else:
+
+    if trailer_url.startswith('http'):
+        trailer_url = local_utils.resolve_trailer(trailer_url)
         trailer_url += '|User-Agent=%s' % (BROWSER_UA)
         
     listitem = xbmcgui.ListItem(path=trailer_url, iconImage=thumb, thumbnailImage=thumb)

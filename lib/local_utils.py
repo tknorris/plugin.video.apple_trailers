@@ -15,9 +15,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import re
+import urllib2
+import struct
 import xbmcvfs
 import kodi
 import log_utils
+from trailer_scraper import BROWSER_UA
 from trakt_api import Trakt_API, TransientTraktError, TraktAuthError
 from trakt_api import SECTIONS
 
@@ -31,6 +35,7 @@ TRAKT_LIST_SORT = __enum(RANK='rank', RECENTLY_ADDED='added', TITLE='title', REL
                          PERCENTAGE='percentage', VOTES='votes')
 TRAKT_SORT_DIR = __enum(ASCENDING='asc', DESCENDING='desc')
 WATCHLIST_SLUG = 'watchlist_slug'
+MAX_REDIR = 1024
 
 def make_art(meta):
     art_dict = {'banner': '', 'fanart': '', 'thumb': '', 'poster': ''}
@@ -81,3 +86,17 @@ def make_list_dict():
                 list_data[key].update(new_set)
     log_utils.log('List Dict: %s: %s' % (slug, list_data))
     return list_data
+
+# manually handle quicktime redirects since Kodi doesn't
+def resolve_trailer(trailer_url):
+    req = urllib2.Request(trailer_url)
+    req.add_header('User-Agent', BROWSER_UA)
+    res = urllib2.urlopen(req)
+    res_headers = dict(res.info().items())
+    if res_headers.get('content-type') == 'video/quicktime' and int(res_headers.get('content-length', MAX_REDIR)) < MAX_REDIR:
+        mov = res.read()
+        r = re.search('moov.*?rmra.*?rdrf.*?url (....)(.*)', mov)
+        if r:
+            url_len = struct.unpack("!I", r.group(1))[0]
+            trailer_url = r.group(2)[:url_len]
+    return trailer_url
