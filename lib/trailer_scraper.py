@@ -194,7 +194,9 @@ class Scraper(object):
     def __get_duration(self, runtime, mult=60):
         duration = 0
         for time in runtime.split(':')[::-1]:
-            duration += int(time) * mult
+            try: time = int(time)
+            except: time = 0
+            duration += time * mult
             mult *= 60
         return duration
     
