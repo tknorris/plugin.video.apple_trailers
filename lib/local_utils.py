@@ -46,6 +46,7 @@ def make_art(meta):
 
 def trailer_exists(path, file_name):
     for f in xbmcvfs.listdir(path)[1]:
+        f = f.decode('utf-8')
         if f.startswith(file_name):
             return f
 
