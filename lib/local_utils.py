@@ -25,6 +25,8 @@ from trailer_scraper import BROWSER_UA
 from trakt_api import Trakt_API, TransientTraktError, TraktAuthError
 from trakt_api import SECTIONS
 
+logger = log_utils.Logger.get_logger()
+
 def __enum(**enums):
     return type('Enum', (), enums)
 
@@ -75,7 +77,7 @@ def make_list_dict():
             else:
                 trakt_list = trakt_api.show_list(slug, SECTIONS.MOVIES)
         except (TransientTraktError, TraktAuthError) as e:
-            log_utils.log(str(e), log_utils.LOGERROR)
+            logger.log(str(e), log_utils.LOGERROR)
             kodi.notify(msg=str(e), duration=5000)
             trakt_list = []
                 
@@ -85,7 +87,7 @@ def make_list_dict():
             if movie['year'] is not None:
                 new_set = set([movie['year'] - 1, movie['year'], movie['year'] + 1])
                 list_data[key].update(new_set)
-    log_utils.log('List Dict: %s: %s' % (slug, list_data))
+    logger.log('List Dict: %s: %s' % (slug, list_data))
     return list_data
 
 # manually handle quicktime redirects since Kodi doesn't

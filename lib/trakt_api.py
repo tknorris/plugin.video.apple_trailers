@@ -26,6 +26,8 @@ import log_utils
 import utils
 import cache
 
+logger = log_utils.Logger.get_logger()
+
 def __enum(**enums):
     return type('Enum', (), enums)
 
@@ -154,7 +156,7 @@ class Trakt_API():
         if cached:
             activity = self.get_last_activity(media, activity)
             cache_limit = (time.time() - utils.iso_2_utc(activity))
-            log_utils.log('Now: %s Last: %s Last TS: %s Cache Limit: %.2fs (%.2fh)' % (time.time(), utils.iso_2_utc(activity), activity, cache_limit, cache_limit / 60 / 60), log_utils.LOGDEBUG)
+            logger.log('Now: %s Last: %s Last TS: %s Cache Limit: %.2fs (%.2fh)' % (time.time(), utils.iso_2_utc(activity), activity, cache_limit, cache_limit / 60 / 60), log_utils.LOGDEBUG)
             cache_limit = cache_limit / 60 / 60
         else:
             cache_limit = 0
@@ -194,13 +196,13 @@ class Trakt_API():
         cached, cached_result = cache._get_func(func_name, args=args, kwargs=kwargs, cache_limit=cache_limit)
         if cached:
             result = cached_result
-            log_utils.log('***Using cached result for: %s' % (url), log_utils.LOGDEBUG)
+            logger.log('***Using cached result for: %s' % (url), log_utils.LOGDEBUG)
         else:
             auth_retry = False
             while True:
                 try:
                     if auth: headers.update({'Authorization': 'Bearer %s' % (self.token)})
-                    log_utils.log('***Trakt Call: %s, header: %s, data: %s cache_limit: %s cached: %s' % (url, headers, json_data, cache_limit, cached), log_utils.LOGDEBUG)
+                    logger.log('***Trakt Call: %s, header: %s, data: %s cache_limit: %s cached: %s' % (url, headers, json_data, cache_limit, cached), log_utils.LOGDEBUG)
                     request = urllib2.Request(url, data=json_data, headers=headers)
                     if method is not None: request.get_method = lambda: method.upper()
                     response = urllib2.urlopen(request, timeout=self.timeout)
@@ -214,7 +216,7 @@ class Trakt_API():
                 except (ssl.SSLError, socket.timeout) as e:
                     if cached_result:
                         result = cached_result
-                        log_utils.log('Temporary Trakt Error (%s). Using Cached Page Instead.' % (str(e)), log_utils.LOGWARNING)
+                        logger.log('Temporary Trakt Error (%s). Using Cached Page Instead.' % (str(e)), log_utils.LOGWARNING)
                     else:
                         raise TransientTraktError('Temporary Trakt Error: ' + str(e))
                 except urllib2.URLError as e:
@@ -222,7 +224,7 @@ class Trakt_API():
                         if e.code in TEMP_ERRORS:
                             if cached_result:
                                 result = cached_result
-                                log_utils.log('Temporary Trakt Error (%s). Using Cached Page Instead.' % (str(e)), log_utils.LOGWARNING)
+                                logger.log('Temporary Trakt Error (%s). Using Cached Page Instead.' % (str(e)), log_utils.LOGWARNING)
                                 break
                             else:
                                 raise TransientTraktError('Temporary Trakt Error: ' + str(e))
@@ -250,7 +252,7 @@ class Trakt_API():
                     elif isinstance(e.reason, socket.timeout) or isinstance(e.reason, ssl.SSLError):
                         if cached_result:
                             result = cached_result
-                            log_utils.log('Temporary Trakt Error (%s). Using Cached Page Instead' % (str(e)), log_utils.LOGWARNING)
+                            logger.log('Temporary Trakt Error (%s). Using Cached Page Instead' % (str(e)), log_utils.LOGWARNING)
                             break
                         else:
                             raise TransientTraktError('Temporary Trakt Error: ' + str(e))
@@ -264,7 +266,7 @@ class Trakt_API():
         except ValueError:
             js_data = ''
             if result:
-                log_utils.log('Invalid JSON Trakt API Response: %s - |%s|' % (url, js_data), log_utils.LOGERROR)
+                logger.log('Invalid JSON Trakt API Response: %s - |%s|' % (url, js_data), log_utils.LOGERROR)
 
-        # log_utils.log('Trakt Response: %s' % (response), xbmc.LOGDEBUG)
+        # logger.log('Trakt Response: %s' % (response), xbmc.LOGDEBUG)
         return js_data

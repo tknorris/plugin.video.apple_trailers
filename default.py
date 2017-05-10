@@ -33,6 +33,8 @@ from lib.trakt_api import SECTIONS
 from lib.local_utils import WATCHLIST_SLUG
 from lib import strings
 
+logger = log_utils.Logger.get_logger()
+
 def __enum(**enums):
     return type('Enum', (), enums)
 
@@ -229,8 +231,8 @@ def set_list():
 def main(argv=None):
     if sys.argv: argv = sys.argv
     queries = kodi.parse_query(sys.argv[2])
-    log_utils.log('Version: |%s| Queries: |%s|' % (kodi.get_version(), queries), log_utils.LOGNOTICE)
-    log_utils.log('Args: |%s|' % (argv), log_utils.LOGNOTICE)
+    logger.log('Version: |%s| Queries: |%s|' % (kodi.get_version(), queries), log_utils.LOGNOTICE)
+    logger.log('Args: |%s|' % (argv), log_utils.LOGNOTICE)
 
     # don't process params that don't match our url exactly. (e.g. plugin://plugin.video.1channel/extrafanart)
     plugin_url = 'plugin://%s/' % (kodi.get_id())
@@ -241,7 +243,7 @@ def main(argv=None):
         mode = queries.get('mode', None)
         url_dispatcher.dispatch(mode, queries)
     except (TransientTraktError, TraktError, TraktAuthError) as e:
-        log_utils.log(str(e), log_utils.LOGERROR)
+        logger.log(str(e), log_utils.LOGERROR)
         kodi.notify(msg=str(e), duration=5000)
 
 if __name__ == '__main__':
